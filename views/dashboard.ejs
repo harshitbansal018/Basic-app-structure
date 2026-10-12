@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include("partials/head") %>
+  <title>Dashboard</title>
+</head>
+<body>
+  <%- include("partials/nav") %>
+
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <h1 class="page-header__title">Dashboard</h1>
+        <p class="page-header__sub"><%= shop %> · <%= plan ? plan.name : "Free" %> plan</p>
+      </div>
+      <div class="page-header__actions">
+        <%# Primary action for the app's main feature goes here. %>
+      </div>
+    </header>
+
+    <div class="stack">
+      <%- include("partials/pageError") %>
+      <%- include("partials/setupBanner") %>
+
+      <section class="grid grid--3 grid--keep" aria-label="Store">
+        <div class="card stat">
+          <span class="stat__label">Store</span>
+          <span class="stat__value stat__value--sm"><%= store.store_name || shop %></span>
+          <span class="stat__note"><%= shop %></span>
+        </div>
+        <div class="card stat">
+          <span class="stat__label">Plan</span>
+          <span class="stat__value stat__value--sm"><%= plan ? plan.name : "Free" %></span>
+          <span class="stat__note">
+            <% if (planChosen) { %>Billed through Shopify<% } else { %><button class="link" type="button" data-navigate="/plans">Choose a plan</button><% } %>
+          </span>
+        </div>
+        <div class="card stat">
+          <span class="stat__label">Installed</span>
+          <span class="stat__value stat__value--sm"><%= h.shortDate(store.installed_at) %></span>
+          <span class="stat__note"><%= store.currency || "" %></span>
+        </div>
+      </section>
+
+      <%# Replace this card with the app's own screens and numbers. %>
+      <section class="card">
+        <div class="empty">
+          <div class="empty__art"><%- include("partials/icon", { name: "sparkle", size: 30 }) %></div>
+          <h2 class="empty__title">Your app starts here</h2>
+          <p class="empty__copy">Installation, billing, webhooks and setup are done. Add the app's own routes, controllers, models and views, then put its primary action in the header above.</p>
+          <div class="row">
+            <button class="btn" type="button" data-navigate="/help">Help &amp; support</button>
+            <button class="btn btn--primary" type="button" data-navigate="/plans">Plans</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

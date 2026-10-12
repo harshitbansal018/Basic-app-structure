@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include("partials/head") %>
+  <title>Help &amp; support</title>
+</head>
+<body>
+  <%- include("partials/nav") %>
+
+  <main class="page page--narrow">
+    <header class="page-header">
+      <div>
+        <h1 class="page-header__title">Help &amp; support</h1>
+        <p class="page-header__sub">How to get started, and answers to common questions.</p>
+      </div>
+      <% if (supportEmail) { %>
+        <div class="page-header__actions">
+          <a class="btn" href="mailto:<%= supportEmail %>" target="_top"><%- include("partials/icon", { name: "help", size: 16 }) %> Contact support</a>
+        </div>
+      <% } %>
+    </header>
+
+    <%# A real navigation per tab: the server decides which is open, so reload and Back land where they should. %>
+    <nav class="tabs tabs--standalone" aria-label="Help sections">
+      <% [["install", "Getting started"], ["faq", "FAQ"]].forEach(function (t) { %>
+        <button class="tabs__tab<%= tab === t[0] ? " tabs__tab--on" : "" %>" type="button" data-navigate="/help?tab=<%= t[0] %>" <%= tab === t[0] ? "aria-current=page" : "" %>><%= t[1] %></button>
+      <% }); %>
+    </nav>
+
+    <% if (tab === "install") { %>
+
+      <section class="card">
+        <ol class="howto">
+          <% steps.forEach(function (step, index) { %>
+            <li class="howto__item">
+              <span class="howto__num"><%= index + 1 %></span>
+              <div>
+                <div class="howto__title"><%= step.title %></div>
+                <div class="howto__detail"><%= step.detail %></div>
+                <% if (step.path) { %>
+                  <div class="path">
+                    <% step.path.forEach(function (part, i) { %><% if (i) { %><%- include("partials/icon", { name: "chevron-right", size: 12 }) %><% } %><span><%= part %></span><% }); %>
+                  </div>
+                <% } %>
+              </div>
+            </li>
+          <% }); %>
+        </ol>
+      </section>
+
+    <% } else { %>
+
+      <section class="card">
+        <% if (!faq.length) { %>
+          <div class="card__section muted">No questions yet.</div>
+        <% } %>
+        <% faq.forEach(function (item) { %>
+          <details class="faq__item">
+            <summary class="faq__question"><span><%= item.question %></span><%- include("partials/icon", { name: "chevron-down", size: 16 }) %></summary>
+            <p class="faq__answer"><%= item.answer %></p>
+          </details>
+        <% }); %>
+      </section>
+
+    <% } %>
+  </main>
+</body>
+</html>

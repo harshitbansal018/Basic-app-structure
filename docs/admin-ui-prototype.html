@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>Migration Hub Prototype</title>
+<style>
+/* Layout: Shopify-admin frame (dark top bar, left nav) around one app column; the Home "journey card" is the spine of the flow. */
+:root {
+  --brand: #0b5368; --brand-hover: #083f50; --brand-soft: #e6f1f4; --brand-line: #b9d6df;
+  --canvas: #f1f2f4; --surface: #ffffff; --surface-sub: #f7f7f7; --surface-hover: #f3f3f3;
+  --line: #e3e3e3; --line-strong: #c9cccf;
+  --text: #303030; --strong: #1a1a1a; --muted: #616161; --subtle: #8a8a8a;
+  --primary: #303030; --primary-hover: #1a1a1a; --on-primary: #ffffff;
+  --success: #0c7a43; --success-bg: #cdfee1; --success-soft: #eafbf1;
+  --info: #00527c; --info-bg: #e0f0ff;
+  --warning: #8a6116; --warning-bg: #ffef9d; --warning-soft: #fff8db;
+  --critical: #b3261e; --critical-bg: #fee9e8; --critical-soft: #fff4f4;
+  --neutral-bg: #ebebeb;
+  --topbar: #1a1a1a; --topbar-text: #e3e3e3; --topbar-field: #303030;
+  --side: #ebebeb; --side-active: #ffffff;
+  --overlay: rgba(0,0,0,.45);
+  --shadow-card: 0 1px 0 rgba(26,26,26,.07), inset 0 0 0 1px rgba(0,0,0,.06);
+  --shadow-raised: 0 8px 24px rgba(26,26,26,.16), inset 0 0 0 1px rgba(0,0,0,.06);
+  --font: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r-sm: 8px; --r: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --brand: #5fb3c9; --brand-hover: #7cc6d9; --brand-soft: #12313a; --brand-line: #285866;
+  --canvas: #141617; --surface: #1f2224; --surface-sub: #262a2c; --surface-hover: #2b3033;
+  --line: #34393c; --line-strong: #4a5054;
+  --text: #e3e5e7; --strong: #ffffff; --muted: #a6acb0; --subtle: #80878b;
+  --primary: #e3e5e7; --primary-hover: #ffffff; --on-primary: #1a1a1a;
+  --success: #4fd18b; --success-bg: #0f3a24; --success-soft: #11291c;
+  --info: #7cc4ff; --info-bg: #0f2a40;
+  --warning: #f0c35a; --warning-bg: #3d300d; --warning-soft: #2b2310;
+  --critical: #ff8a80; --critical-bg: #3e1715; --critical-soft: #2c1413;
+  --neutral-bg: #34393c;
+  --topbar: #0c0d0e; --topbar-field: #232628;
+  --side: #191b1c; --side-active: #26292b;
+  --overlay: rgba(0,0,0,.6);
+  --shadow-card: inset 0 0 0 1px rgba(255,255,255,.07);
+  --shadow-raised: 0 8px 24px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --brand: #5fb3c9; --brand-hover: #7cc6d9; --brand-soft: #12313a; --brand-line: #285866;
+  --canvas: #141617; --surface: #1f2224; --surface-sub: #262a2c; --surface-hover: #2b3033;
+  --line: #34393c; --line-strong: #4a5054;
+  --text: #e3e5e7; --strong: #ffffff; --muted: #a6acb0; --subtle: #80878b;
+  --primary: #e3e5e7; --primary-hover: #ffffff; --on-primary: #1a1a1a;
+  --success: #4fd18b; --success-bg: #0f3a24; --success-soft: #11291c;
+  --info: #7cc4ff; --info-bg: #0f2a40;
+  --warning: #f0c35a; --warning-bg: #3d300d; --warning-soft: #2b2310;
+  --critical: #ff8a80; --critical-bg: #3e1715; --critical-soft: #2c1413;
+  --neutral-bg: #34393c;
+  --topbar: #0c0d0e; --topbar-field: #232628;
+  --side: #191b1c; --side-active: #26292b;
+  --overlay: rgba(0,0,0,.6);
+  --shadow-card: inset 0 0 0 1px rgba(255,255,255,.07);
+  --shadow-raised: 0 8px 24px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--text); font: 14.5px/1.5 var(--font); }
+/* plain-language helpers */
+.reassure { display: flex; gap: 8px 20px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.reassure span { display: inline-flex; align-items: center; gap: 6px; }
+.reassure svg { color: var(--success); }
+.next { border-radius: var(--r-sm); background: var(--surface-sub); box-shadow: inset 0 0 0 1px var(--line); padding: 12px 14px; }
+.next__title { font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.next ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+.jstep__now { display: block; font-size: 12px; font-weight: 500; color: var(--brand); }
+.howto { border-radius: var(--r-sm); background: var(--brand-soft); padding: 0; }
+.howto summary { cursor: pointer; padding: 10px 12px; font-weight: 600; color: var(--brand); list-style: none; display: flex; align-items: center; gap: 6px; }
+.howto summary::-webkit-details-marker { display: none; }
+.howto ol { margin: 0; padding: 0 14px 12px 34px; display: flex; flex-direction: column; gap: 4px; }
+.summary-line { font-size: 16px; color: var(--strong); font-weight: 600; }
+
+/* ---------- migrations: overview, live run, run history ---------- */
+.mg-over { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.mg-route { padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; border-right: 1px solid var(--line); background: radial-gradient(90% 120% at 0% 0%, var(--brand-soft) 0%, transparent 55%), var(--surface); border-radius: var(--r) 0 0 var(--r); }
+.mg-route .welcome__path { justify-self: center; }
+.mg-route .welcome__path span { box-shadow: 0 0 0 2px var(--surface); }
+.mg-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mg-stat { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; min-width: 0; border-left: 1px solid var(--line); }
+.mg-stat:nth-child(odd) { border-left: 0; }
+.mg-stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+.mg-stat__label { color: var(--muted); font-size: 12.5px; font-weight: 550; }
+.mg-stat__value { font-size: 22px; font-weight: 700; color: var(--strong); letter-spacing: -.01em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.mg-stat__value--ok { color: var(--success); }
+.mg-stat__value--bad { color: var(--critical); }
+.mg-stat__foot { color: var(--subtle); font-size: 12px; }
+@media (max-width: 900px) {
+  .mg-over { grid-template-columns: minmax(0, 1fr); }
+  .mg-route { border-right: 0; border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; }
+}
+@media (max-width: 560px) {
+  .mg-route { grid-template-columns: minmax(0, 1fr); } .mg-route .welcome__path { display: none; }
+  .mg-route .rv-node--to { flex-direction: row; text-align: left; } .mg-route .rv-node--to .rv-ok { justify-content: flex-start; }
+}
+
+/* a run in progress, or a draft waiting to be finished */
+.live { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; padding: 14px 16px; }
+.live__icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--info-bg); color: var(--info); grid-row: 1 / 3; }
+.live__icon--draft { background: var(--neutral-bg); color: var(--muted); }
+.live__icon svg { width: 20px; height: 20px; }
+.live__title { grid-column: 2; grid-row: 1; font-weight: 650; color: var(--strong); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.live__meter { grid-column: 2; grid-row: 2; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12.5px; }
+.live__meter .progress { flex: 1; }
+.live .btn { grid-column: 3; grid-row: 1 / 3; }
+@media (max-width: 560px) { .live { grid-template-columns: 40px minmax(0, 1fr); } .live .btn { grid-column: 2; grid-row: 3; justify-self: start; } }
+
+/* run history: one row per finished run */
+.runs { display: flex; flex-direction: column; }
+.run { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(150px, 210px) auto; gap: 14px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+.run:hover { background: var(--surface-sub); }
+.run:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.run__icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.run__icon--ok { background: var(--success-soft); color: var(--success); }
+.run__icon--warn { background: var(--warning-soft); color: var(--warning); }
+.run__icon svg { width: 20px; height: 20px; }
+.run__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.run__title { font-weight: 650; color: var(--strong); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.run__meta { color: var(--muted); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 2px 0; }
+.run__meta span + span::before { content: "·"; margin: 0 6px; color: var(--subtle); }
+.run__meter { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); min-width: 0; }
+.run__meter b { color: var(--strong); font-weight: 650; font-variant-numeric: tabular-nums; }
+.run__bar { display: flex; height: 6px; border-radius: 999px; background: var(--neutral-bg); overflow: hidden; }
+.run__bar span { display: block; height: 100%; background: var(--success); }
+.run__bar span + span { background: var(--critical); }
+.run__actions { display: flex; gap: 6px; justify-content: flex-end; }
+.runs__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface-sub); border-radius: 0 0 var(--r) var(--r); color: var(--muted); font-size: 12.5px; }
+@media (max-width: 760px) {
+  .run { grid-template-columns: 40px minmax(0, 1fr); }
+  .run__meter, .run__actions { grid-column: 2; }
+  .run__actions { justify-content: flex-start; }
+}
+
+/* ---------- dashboard ---------- */
+/* chart series: validated categorical order (adjacent CVD ΔE ≥ 8.4 in both modes) */
+:root { --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --grid: #ebebeb; --tip: #1a1a1a; --tip-text: #ffffff; --area-alpha: .3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --grid: #30353a; --tip: #f1f2f4; --tip-text: #1a1a1a; --area-alpha: .38; } }
+:root[data-theme="dark"] { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --grid: #30353a; --tip: #f1f2f4; --tip-text: #1a1a1a; --area-alpha: .38; }
+
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--neutral-bg); gap: 2px; }
+.seg button { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; color: var(--muted); white-space: nowrap; transition: background .15s, color .15s, box-shadow .15s; }
+.seg button:hover { color: var(--strong); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--strong); box-shadow: var(--shadow-card); }
+.seg button:focus-visible { outline: 2px solid var(--brand); }
+.dash-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dash-filters .select { width: auto; min-width: 190px; }
+
+.kpi { padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpi__label { color: var(--muted); font-size: 13px; font-weight: 550; }
+.kpi__value { font-size: 26px; font-weight: 700; color: var(--strong); letter-spacing: -.01em; }
+.kpi__foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 4px 8px; margin-top: 4px; flex-wrap: wrap; }
+.kpi__delta { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.kpi__delta--up { color: var(--success); }
+.kpi__delta--down { color: var(--critical); }
+.kpi__spark { flex: none; }
+.kpi--hero .kpi__value { font-size: 34px; }
+
+.dgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; width: 100%; }
+.dgrid--even { grid-template-columns: repeat(2, minmax(0, 1fr));  }
+@media (max-width: 900px) { .dgrid, .dgrid--even { grid-template-columns: minmax(0, 1fr); } }
+.card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 16px 16px 0; }
+.card__head p { color: var(--muted); font-size: 13px; }
+/* the "records over time" card: a fixed-height body, so switching views never moves the page */
+.chart-card__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: start; padding: 16px 16px 0; }
+.chart-card__head p { color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) { .chart-card__head { grid-template-columns: minmax(0, 1fr); } }
+.chart-body { position: relative; height: 296px; min-width: 0; }
+.chart-view { position: absolute; inset: 0; display: flex; flex-direction: column; animation: chartIn .28s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes chartIn { from { opacity: 0; transform: translateY(6px); } }
+.chart-main { flex: 1; min-height: 0; min-width: 0; }
+.chart-foot { flex: none; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; padding: 8px 16px 12px; color: var(--muted); font-size: 12.5px; }
+.chart-foot strong { color: var(--strong); font-weight: 650; }
+.chart { padding: 10px 16px 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--font); }
+.chart .axis-line { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--line-strong); }
+.chart .cap-label { fill: var(--strong); font-size: 11.5px; font-weight: 650; }
+/* columns grow up from the baseline, one after another */
+.chart .col { transform-box: fill-box; transform-origin: 50% 100%; animation: colGrow .5s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--i, 0) * 14ms); transition: opacity .15s; }
+@keyframes colGrow { from { transform: scaleY(0); } }
+.chart .col.dim { opacity: .3; }
+/* the running total is revealed left to right */
+.chart .reveal { transform-box: fill-box; transform-origin: 0 50%; animation: revealX .7s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes revealX { from { transform: scaleX(0); } }
+.chart .band { fill-opacity: var(--area-alpha); }
+.chart .band-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart [data-s] { transition: opacity .15s; }
+/* legend hover: spotlight one series */
+.chart-card[data-focus] .chart [data-s] { opacity: .12; }
+.chart-card[data-focus="products"] .chart [data-s="products"], .chart-card[data-focus="customers"] .chart [data-s="customers"],
+.chart-card[data-focus="orders"] .chart [data-s="orders"], .chart-card[data-focus="other"] .chart [data-s="other"] { opacity: 1; }
+.chart-card[data-focus="products"] .dash-table [data-s="products"], .chart-card[data-focus="customers"] .dash-table [data-s="customers"],
+.chart-card[data-focus="orders"] .dash-table [data-s="orders"], .chart-card[data-focus="other"] .dash-table [data-s="other"] { background: var(--brand-soft); }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 4px; padding: 8px 12px 0; font-size: 12.5px; color: var(--text); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 6px; cursor: default; transition: background .15s; }
+.legend span:hover { background: var(--surface-hover); }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.hbars { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.hbar { display: grid; grid-template-columns: 116px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 13px; cursor: default; }
+.hbar__track { height: 10px; border-radius: 0 4px 4px 0; background: var(--neutral-bg); overflow: hidden; }
+.hbar__fill { height: 100%; border-radius: 0 4px 4px 0; transition: width .3s; }
+.hbar__val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--strong); min-width: 52px; text-align: right; }
+.hbar:hover .hbar__track { box-shadow: 0 0 0 2px var(--brand-soft); }
+
+.health { display: flex; gap: 2px; height: 14px; margin: 14px 16px 10px; }
+.health span { display: block; height: 100%; }
+.health span:first-child { border-radius: 4px 0 0 4px; }
+.health span:last-child { border-radius: 0 4px 4px 0; }
+.health-keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 16px 16px; }
+.health-keys div { display: flex; flex-direction: column; gap: 2px; }
+.health-keys strong { font-size: 18px; color: var(--strong); font-variant-numeric: tabular-nums; }
+.health-keys span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.health-keys i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+.feed { list-style: none; margin: 0; padding: 6px 16px 12px; }
+.feed li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.feed li:first-child { border-top: 0; }
+.feed__icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.feed__icon--ok { background: var(--success-soft); color: var(--success); }
+.feed__icon--warn { background: var(--warning-soft); color: var(--warning); }
+.feed__text strong { color: var(--strong); font-weight: 600; }
+.feed__time { color: var(--subtle); font-size: 12.5px; white-space: nowrap; }
+.dash-table { overflow: auto; padding: 4px 16px 0; }
+.dash-table table { font-size: 13px; }
+.dash-table td, .dash-table th { padding: 7px 10px; }
+.dash-table thead th { position: sticky; top: 0; z-index: 1; }
+.dash-table tfoot th { position: sticky; bottom: 0; font-size: 13px; color: var(--strong); background: var(--surface-sub); border-top: 1px solid var(--line); border-bottom: 0; }
+.dash-table tbody tr:hover td { background: var(--surface-sub); }
+#vtip { position: fixed; z-index: 70; pointer-events: none; background: var(--tip); color: var(--tip-text); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.18); opacity: 0; transition: opacity .1s; max-width: 240px; }
+#vtip.show { opacity: 1; }
+#vtip .row { gap: 14px; flex-wrap: nowrap; justify-content: space-between; }
+#vtip .row > span { display: inline-flex; align-items: center; gap: 6px; }
+#vtip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; }
+#vtip b { font-variant-numeric: tabular-nums; }
+#vtip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+#vtip b { font-variant-numeric: tabular-nums; }
+
+/* new-migration choice dialog */
+.choice { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.choice:hover { background: var(--surface-hover); }
+.choice:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.choice--primary { box-shadow: inset 0 0 0 2px var(--brand); background: var(--brand-soft); }
+.choice--primary:hover { background: var(--brand-soft); filter: brightness(.98); }
+.choice__title { font-weight: 650; color: var(--strong); }
+.choice__body { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+/* alignment helpers */
+.stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.wiz-title { font-size: 16px; }
+.tile__text { display: flex; flex-direction: column; min-width: 0; }
+.tile__logo.tile__logo--xs { width: auto; min-width: 24px; height: 22px; padding-inline: 5px; border-radius: 6px; font-size: 10.5px; }
+.check__label { display: block; }
+.check > span { display: flex; flex-direction: column; min-width: 0; }
+.jstep__label { display: flex; flex-direction: column; min-width: 0; }
+.banner .btn { flex: none; align-self: center; }
+.checklist .btn { flex: none; }
+.facts > div { min-width: 0; }
+.kv dd { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .checklist li { flex-wrap: wrap; }
+  .checklist .btn { margin-left: 30px; }
+  .kv { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .kv dd { margin-bottom: 8px; }
+  .banner { flex-wrap: wrap; }
+}
+button { font: inherit; color: inherit; }
+h1, h2, h3 { color: var(--strong); margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.num, td.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ---------- admin frame ---------- */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding-inline: 16px; background: var(--topbar); color: var(--topbar-text); }
+.topbar__mark { width: 26px; height: 26px; border-radius: 7px; background: var(--brand); display: grid; place-items: center; color: #fff; flex: none; }
+.topbar__search { flex: 1; max-width: 520px; margin-inline: auto; height: 32px; border-radius: 9px; background: var(--topbar-field); color: #9aa0a4; display: flex; align-items: center; gap: 8px; padding-inline: 12px; font-size: 13px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.topbar__store { display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; }
+.topbar__avatar { width: 28px; height: 28px; border-radius: 8px; background: #3d8a5f; color: #fff; display: grid; place-items: center; font-weight: 650; font-size: 12px; }
+.admin { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: calc(100vh - 52px); }
+.side { background: var(--side); padding: 10px 8px 24px; display: flex; flex-direction: column; gap: 1px; }
+.side__item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; color: var(--muted); font-weight: 550; font-size: 13px; }
+.side__item svg { opacity: .7; }
+.side__label { margin: 14px 10px 4px; font-size: 12px; color: var(--subtle); font-weight: 600; }
+.side__app { color: var(--strong); background: var(--side-active); box-shadow: var(--shadow-card); }
+.side__sub { display: flex; flex-direction: column; gap: 1px; padding: 4px 0 4px 26px; }
+.side__link { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; color: var(--muted); font-weight: 550; font-size: 13px; }
+.side__link:hover { background: var(--surface-hover); color: var(--strong); }
+.side__link[aria-current="page"] { color: var(--strong); background: var(--side-active); }
+.side__link:focus-visible { outline: 2px solid var(--brand); }
+
+.apptabs { display: none; gap: 4px; overflow-x: auto; padding: 8px 0 4px; margin-bottom: 4px; }
+.apptabs button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-card); font-weight: 550; white-space: nowrap; }
+.apptabs button[aria-current="page"] { background: var(--primary); color: var(--on-primary); }
+
+main { padding: 20px 24px 48px; min-width: 0; }
+.page { max-width: 1000px; margin-inline: auto; display: flex; flex-direction: column; gap: 16px; }
+.page--narrow { max-width: 980px; }
+
+@media (max-width: 760px) {
+  .admin { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  .apptabs { display: flex; }
+  main { padding: 8px 16px 40px; }
+  .topbar__search { display: none; }
+  .topbar__store span.hide-sm { display: none; }
+  .topbar { justify-content: space-between; }
+}
+
+/* ---------- primitives ---------- */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.page-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.page-header__sub { color: var(--muted); margin-top: 2px; }
+.back { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-weight: 550; font-size: 13px; }
+.back:hover { color: var(--strong); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row--end { justify-content: flex-end; }
+.row--between { justify-content: space-between; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+
+.card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-card); }
+.card__sec { padding: 16px; }
+.card__sec + .card__sec { border-top: 1px solid var(--line); }
+.card__title { font-size: 14px; font-weight: 650; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 14px; border: 0; border-radius: var(--r-sm); background: var(--surface); color: var(--strong); font-weight: 600; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line-strong), 0 1px 0 rgba(0,0,0,.05); white-space: nowrap; }
+.btn:hover { background: var(--surface-hover); }
+.btn--primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+.btn--primary:hover { background: var(--primary-hover); }
+.btn--critical { background: var(--critical); color: #fff; box-shadow: none; }
+.btn--critical:hover { background: var(--critical); filter: brightness(.92); }
+.btn--plain { background: none; box-shadow: none; color: var(--brand); padding-inline: 6px; }
+.btn--plain:hover { background: var(--brand-soft); }
+.btn--plain-critical { color: var(--critical); }
+.btn--plain-critical:hover { background: var(--critical-soft); }
+.btn--sm { min-height: 30px; padding: 5px 11px; font-size: 13px; }
+/* plan pill: the plan and how much of it is used, in the page header; click opens Plans */
+.plan-pill { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: var(--r-sm); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong), 0 1px 0 rgba(0,0,0,.05); font-size: 13px; color: var(--muted); white-space: nowrap; transition: background .15s; }
+.plan-pill:hover { background: var(--surface-hover); }
+.plan-pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.plan-pill strong { color: var(--strong); font-weight: 650; }
+.plan-pill__sep { width: 1px; height: 16px; background: var(--line); }
+.plan-pill__meter { width: 56px; height: 5px; border-radius: 999px; background: var(--neutral-bg); overflow: hidden; }
+.plan-pill__meter span { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
+.plan-pill--warn .plan-pill__meter span { background: var(--warning); }
+.plan-pill--over .plan-pill__meter span { background: var(--critical); }
+.plan-pill--over .num { color: var(--critical); }
+.plan-pill__link { color: var(--brand); font-weight: 600; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn.is-loading { color: transparent !important; position: relative; pointer-events: none; }
+.btn.is-loading::after { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); border-top-color: transparent; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.link { all: unset; cursor: pointer; color: var(--brand); font-weight: 550; text-decoration: underline; text-underline-offset: 2px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--neutral-bg); color: var(--text); white-space: nowrap; }
+.badge--success { background: var(--success-bg); color: var(--success); }
+.badge--info { background: var(--info-bg); color: var(--info); }
+.badge--warning { background: var(--warning-bg); color: var(--warning); }
+.badge--critical { background: var(--critical-bg); color: var(--critical); }
+.badge--brand { background: var(--brand-soft); color: var(--brand); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pulse .dot { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+
+.banner { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r); }
+.banner--info { background: var(--info-bg); color: var(--text); }
+.banner--success { background: var(--success-soft); box-shadow: inset 0 0 0 1px var(--success-bg); }
+.banner--warning { background: var(--warning-soft); box-shadow: inset 0 0 0 1px var(--warning-bg); }
+.banner--brand { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand-line); }
+.banner > svg { flex: none; margin-top: 1px; }
+.banner__body { flex: 1; min-width: 0; }
+
+.progress { height: 8px; border-radius: 999px; background: var(--neutral-bg); overflow: hidden; }
+.progress--thin { height: 5px; }
+.progress span { display: block; height: 100%; background: var(--brand); border-radius: inherit; transition: width .2s; }
+.progress--success span { background: var(--success); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 8px 16px; background: var(--surface-sub); border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--surface-hover); }
+th.num, td.num { text-align: right; }
+.t2 { display: block; color: var(--muted); font-size: 12.5px; }
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-weight: 550; }
+.input, .select { width: 100%; min-height: 34px; padding: 6px 10px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: inherit; }
+.input--mono { font-family: var(--mono); font-size: 12.5px; }
+.input:focus, .select:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
+.help { color: var(--muted); font-size: 12.5px; }
+.check { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--brand); }
+input[type="radio"], input[type="checkbox"] { accent-color: var(--brand); }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.stat__label { color: var(--muted); font-size: 12.5px; font-weight: 550; }
+.stat__value { font-size: 22px; font-weight: 700; color: var(--strong); font-variant-numeric: tabular-nums; }
+.stat__value--critical { color: var(--critical); }
+.stat__value--success { color: var(--success); }
+
+/* ---------- journey (home) ---------- */
+.journey { display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+.journey__steps { list-style: none; margin: 0; padding: 12px; border-right: 1px solid var(--line); background: var(--surface-sub); border-radius: var(--r) 0 0 var(--r); display: flex; flex-direction: column; gap: 2px; }
+.jstep { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; color: var(--subtle); font-weight: 550; }
+.jstep__mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; flex: none; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.jstep--done { color: var(--muted); }
+.jstep--done .jstep__mark { background: var(--success); color: #fff; box-shadow: none; }
+.jstep--current { color: var(--strong); background: var(--surface); box-shadow: var(--shadow-card); }
+.jstep--current .jstep__mark { background: var(--brand); color: #fff; box-shadow: none; }
+.journey__panel { padding: 24px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.eyebrow { font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--brand); }
+.journey__title { font-size: 20px; font-weight: 700; }
+.journey__body { color: var(--muted); max-width: 60ch; }
+.journey__meter { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12.5px; }
+.journey__meter .progress { flex: 1; }
+.facts { display: flex; gap: 20px; flex-wrap: wrap; }
+.facts div { display: flex; flex-direction: column; }
+.facts strong { font-size: 15px; color: var(--strong); font-variant-numeric: tabular-nums; }
+.facts span { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 760px) {
+  .journey { grid-template-columns: minmax(0, 1fr); }
+  .journey__steps { border-right: 0; border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; flex-direction: row; overflow-x: auto; }
+  .jstep { flex: none; }
+  .jstep:not(.jstep--current) .jstep__label { display: none; }
+  .journey__panel { padding: 18px 16px; }
+}
+
+/* checklist */
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.checklist li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.checklist li:first-child { border-top: 0; }
+.checklist input { width: 18px; height: 18px; flex: none; }
+.checklist__text { flex: 1; min-width: 0; }
+.checklist__text strong { display: block; color: var(--strong); font-weight: 600; }
+.checklist li.done .checklist__text strong { text-decoration: line-through; color: var(--muted); }
+
+/* ---------- wizard ---------- */
+.stepper { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; }
+.stepper li { flex: 1; display: flex; flex-direction: column; gap: 6px; font-weight: 600; color: var(--subtle); font-size: 12.5px; }
+.stepper li::before { content: ""; height: 4px; border-radius: 999px; background: var(--neutral-bg); }
+.stepper li.done { color: var(--muted); }
+.stepper li.done::before { background: var(--success); }
+.stepper li.current { color: var(--strong); }
+.stepper li.current::before { background: var(--brand); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 460px) { .tiles { grid-template-columns: minmax(0, 1fr); } }
+.tile { position: relative; display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line-strong); cursor: pointer; }
+.tile input { position: absolute; opacity: 0; }
+.tile:has(input:checked) { box-shadow: inset 0 0 0 2px var(--brand); background: var(--brand-soft); }
+.tile:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.tile--off { opacity: .5; cursor: not-allowed; }
+.tile__logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-weight: 750; color: #fff; flex: none; font-size: 13px; }
+.tile__name { font-weight: 650; color: var(--strong); display: block; }
+.scan { border-radius: var(--r-sm); background: var(--surface-sub); box-shadow: inset 0 0 0 1px var(--line); padding: 14px; min-height: 100%; }
+.scan__empty { height: 100%; min-height: 180px; display: grid; place-items: center; text-align: center; color: var(--muted); }
+.scan ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.scan li { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
+.scan li:first-child { border-top: 0; }
+.ok { color: var(--success); font-weight: 650; display: flex; align-items: center; gap: 6px; }
+.pick { display: flex; flex-direction: column; }
+.pick__row { border-top: 1px solid var(--line); }
+.pick__row:first-child { border-top: 0; }
+.pick__main { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; }
+.pick__main:hover { background: var(--surface-hover); }
+.pick__main input { width: 16px; height: 16px; flex: none; margin: 0; }
+.pick__text { flex: 1; min-width: 0; }
+.pick__summary { display: block; font-size: 12.5px; color: var(--brand); font-weight: 550; margin-top: 1px; }
+.pick__sub { margin: 0 16px 14px 44px; padding: 12px 14px; border: 0; border-radius: var(--r-sm); background: var(--surface-sub); box-shadow: inset 0 0 0 1px var(--line); min-width: 0; }
+.pick__subhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.pick__subhead .btn { text-transform: none; letter-spacing: 0; }
+.pick__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; }
+.pick__grid .check input { width: 15px; height: 15px; flex: none; margin: 2px 0 0; }
+.pick__grid .check input:disabled + span { opacity: .75; }
+@media (max-width: 560px) { .pick__sub { margin-left: 16px; } .pick__grid { grid-template-columns: minmax(0, 1fr); } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.pick__name { font-weight: 600; color: var(--strong); }
+.pick__count { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px 16px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 600; color: var(--strong); }
+details.adv > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px; font-weight: 650; color: var(--strong); }
+details.adv > summary::-webkit-details-marker { display: none; }
+details.adv > summary .chev { transition: transform .15s; }
+details.adv[open] > summary .chev { transform: rotate(180deg); }
+.opt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; padding: 4px 16px 16px; }
+@media (max-width: 640px) { .opt-grid { grid-template-columns: minmax(0, 1fr); } }
+.opt { display: flex; flex-direction: column; gap: 6px; }
+.opt__label { font-weight: 600; color: var(--strong); }
+.radios { display: flex; gap: 14px; flex-wrap: wrap; }
+.radios label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.footer-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--line); }
+
+/* ---------- wizard step 3, "Review and run": route panel, headline figures, one tile per data type ---------- */
+.rv-route { margin: 0 16px 14px; padding: 16px 18px; border-radius: var(--r); background: radial-gradient(100% 140% at 100% 0%, var(--brand-soft) 0%, transparent 55%), var(--surface-sub); box-shadow: inset 0 0 0 1px var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.rv-route .welcome__path { justify-self: center; }
+.rv-node { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rv-node--to { flex-direction: row-reverse; text-align: right; }
+.rv-node i { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; font-style: normal; font-weight: 700; font-size: 13px; color: #fff; box-shadow: var(--shadow-card); }
+.rv-node i svg { width: 22px; height: 22px; }
+.rv-node__shop { background: var(--brand); }
+.rv-node > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.rv-node strong { color: var(--strong); font-weight: 650; }
+.rv-node small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-node .rv-ok { color: var(--success); display: inline-flex; align-items: center; gap: 4px; }
+.rv-node--to .rv-ok { justify-content: flex-end; }
+.rv-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px 6px; }
+.rv-stat { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line); min-width: 0; }
+.rv-stat__label { color: var(--muted); font-size: 12.5px; font-weight: 550; }
+.rv-stat__value { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 22px; font-weight: 700; color: var(--strong); letter-spacing: -.01em; line-height: 1.2; }
+.rv-stat__foot { color: var(--subtle); font-size: 12.5px; }
+.rv-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px 8px; font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.rv-head .btn { text-transform: none; letter-spacing: 0; }
+.rv-data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px 16px; }
+.rv-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 0 12px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line); }
+.rv-item__icon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); grid-row: 1 / 3; }
+.rv-item__icon svg { width: 18px; height: 18px; }
+.rv-item__name { font-weight: 600; color: var(--strong); min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.rv-item__name small { font-weight: 500; color: var(--muted); font-size: 12px; }
+.rv-item__count { font-weight: 700; color: var(--strong); font-size: 15px; }
+.rv-item__bar { grid-column: 2 / 4; height: 4px; border-radius: 999px; background: var(--neutral-bg); margin-top: 8px; overflow: hidden; }
+.rv-item__bar span { display: block; height: 100%; background: var(--brand); border-radius: inherit; }
+.rv-demo { margin: 0 16px 16px; }
+@media (max-width: 640px) {
+  .rv-route { grid-template-columns: minmax(0, 1fr); } .rv-route .welcome__path { display: none; }
+  .rv-node--to { flex-direction: row; text-align: left; } .rv-node--to .rv-ok { justify-content: flex-start; }
+  .rv-stats, .rv-data { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- progress ---------- */
+.ent { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
+.ent:first-child { border-top: 0; }
+.ent__icon { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--line-strong); color: var(--subtle); }
+.ent--done .ent__icon { background: var(--success); color: #fff; box-shadow: none; }
+.ent--active .ent__icon { box-shadow: inset 0 0 0 2px var(--brand); color: var(--brand); }
+.ent__name { font-weight: 600; color: var(--strong); }
+.ent--wait .ent__name { color: var(--muted); font-weight: 550; }
+.ent__count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; text-align: right; }
+.ent .progress { grid-column: 2 / 4; }
+
+/* ---------- issues ---------- */
+.issue { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 0 14px; padding: 16px; border-top: 1px solid var(--line); }
+.issue:first-of-type { border-top: 0; }
+.issue__bar { border-radius: 4px; background: var(--critical); }
+.issue--fixed .issue__bar { background: var(--success); }
+.issue h3 { font-size: 14px; font-weight: 650; }
+.issue__why { color: var(--muted); margin-top: 2px; max-width: 70ch; }
+.issue__fix { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.issue__fix span { color: var(--text); }
+
+/* ---------- plans ---------- */
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .plans { grid-template-columns: minmax(0, 1fr); } }
+.plan { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.plan--rec { box-shadow: inset 0 0 0 2px var(--brand), var(--shadow-card); }
+.plan__price { font-size: 26px; font-weight: 750; color: var(--strong); }
+.plan__price small { font-size: 13px; color: var(--muted); font-weight: 550; }
+.plan ul { margin: 0; padding-left: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+.plan .btn { margin-top: auto; }
+
+/* ---------- help centre ---------- */
+a.btn { text-decoration: none; }
+.hp-topics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .hp-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .hp-topics { grid-template-columns: minmax(0, 1fr); } }
+.hp-topic { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 10px; min-height: 150px; padding: 16px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow-card); transition: transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .18s; }
+.hp-topic:hover { transform: translateY(-2px); box-shadow: var(--shadow-raised); }
+.hp-topic:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.hp-topic[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--brand), var(--shadow-card); }
+.hp-topic__icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.hp-topic__icon svg { width: 20px; height: 20px; }
+.hp-topic__icon--ok { background: var(--success-soft); color: var(--success); }
+.hp-topic__icon--info { background: var(--info-bg); color: var(--info); }
+.hp-topic__icon--warn { background: var(--warning-soft); color: var(--warning); }
+.hp-topic strong { color: var(--strong); font-weight: 650; display: block; }
+.hp-topic small { color: var(--muted); font-size: 12.5px; display: block; margin-top: 1px; line-height: 1.4; }
+.hp-topic__foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--subtle); font-weight: 550; }
+.hp-topic__foot svg { color: var(--brand); transition: transform .15s; }
+.hp-topic:hover .hp-topic__foot svg { transform: translateX(3px); }
+
+.hp-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .hp-grid { grid-template-columns: minmax(0, 1fr); } }
+.hp-faq .card__head { padding-bottom: 12px; }
+.hp-count { font-size: 12.5px; color: var(--subtle); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hp-cats { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 12px; }
+.hp-cat { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); transition: background .15s, color .15s, box-shadow .15s; }
+.hp-cat:hover { color: var(--strong); background: var(--surface-hover); }
+.hp-cat:focus-visible { outline: 2px solid var(--brand); }
+.hp-cat[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); box-shadow: none; }
+.hp-cat i { font-style: normal; font-size: 11px; line-height: 1.5; padding: 0 6px; border-radius: 999px; background: var(--neutral-bg); color: var(--text); font-variant-numeric: tabular-nums; }
+.hp-cat[aria-pressed="true"] i { background: rgba(255,255,255,.2); color: inherit; }
+.hp-q { border-top: 1px solid var(--line); }
+.hp-q > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; font-weight: 600; color: var(--strong); transition: background .15s; }
+.hp-q > summary::-webkit-details-marker { display: none; }
+.hp-q > summary:hover { background: var(--surface-sub); }
+.hp-q > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.hp-q__n { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
+.hp-q[open] .hp-q__n { background: var(--brand); color: #fff; }
+.hp-q .chev { color: var(--subtle); transition: transform .18s; }
+.hp-q[open] .chev { transform: rotate(180deg); }
+.hp-q__body { padding: 0 16px 16px 58px; display: flex; flex-direction: column; gap: 12px; animation: chartIn .22s cubic-bezier(.2,.7,.2,1) both; }
+.hp-q__body p { color: var(--muted); max-width: 65ch; }
+.hp-q__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--subtle); }
+.hp-vote { display: inline-flex; align-items: center; gap: 4px; }
+.hp-vote button { all: unset; cursor: pointer; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); }
+.hp-vote button:hover { background: var(--surface-hover); color: var(--strong); }
+.hp-vote button:focus-visible { outline: 2px solid var(--brand); }
+.hp-guide__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 16px 12px; }
+.hp-guide__head .seg { padding: 2px; }
+.hp-guide__head .seg button { padding: 4px 10px; font-size: 12.5px; }
+.hp-steps { list-style: none; margin: 0; padding: 4px 16px 16px; counter-reset: s; display: flex; flex-direction: column; }
+.hp-steps li { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; padding: 0 0 14px; color: var(--text); }
+.hp-steps li::before { counter-increment: s; content: counter(s); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--brand); color: #fff; }
+.hp-steps li:not(:last-child)::after { content: ""; position: absolute; left: 12.5px; top: 28px; bottom: 2px; width: 1px; background: var(--brand-line); }
+.hp-steps li:last-child { padding-bottom: 0; }
+.hp-steps li span { padding-top: 3px; }
+.hp-lock { display: inline-flex; align-items: center; gap: 6px; }
+.hp-team { display: flex; align-items: center; gap: 12px; padding: 16px; }
+.hp-team strong { display: block; color: var(--strong); font-weight: 650; }
+.hp-team small { display: block; color: var(--muted); font-size: 12.5px; }
+.hp-avatars { display: flex; flex: none; }
+.hp-avatars span { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; box-shadow: 0 0 0 2px var(--surface); margin-left: -8px; }
+.hp-avatars span:first-child { margin-left: 0; }
+.hp-chan { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); color: inherit; cursor: pointer; transition: background .15s; }
+.hp-chan:hover { background: var(--surface-sub); }
+.hp-chan:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.hp-chan__icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.hp-chan strong { display: block; color: var(--strong); font-weight: 600; overflow-wrap: anywhere; }
+.hp-chan small { display: block; color: var(--muted); font-size: 12.5px; }
+.hp-chan .chev { transform: rotate(-90deg); color: var(--subtle); }
+.hp-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 11px 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); background: var(--surface-sub); border-radius: 0 0 var(--r) var(--r); }
+.hp-status .ok { font-size: 13px; }
+.hp-status .dot { background: var(--success); animation: pulse 1.4s ease-in-out infinite; }
+@media (max-width: 560px) { .hp-q__body { padding-left: 16px; } }
+
+/* ---------- empty ---------- */
+.empty { padding: 36px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.empty__art { width: 56px; height: 56px; border-radius: 16px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; }
+
+/* ---------- toast, modal, prototype bar ---------- */
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px); background: #1a1a1a; color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 550; opacity: 0; pointer-events: none; transition: .2s; z-index: 60; max-width: calc(100vw - 32px); text-align: center; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.overlay { position: fixed; inset: 0; background: var(--overlay); display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 16px; z-index: 50; }
+.overlay > .dialog { max-width: 100%; min-width: 0; }
+.dialog { width: min(480px, 100%); background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-raised); }
+.dialog__head { padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 650; color: var(--strong); font-size: 15px; }
+.dialog__body { padding: 16px; color: var(--text); display: flex; flex-direction: column; gap: 8px; }
+.dialog__foot { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- welcome dialog: shown once, over the dashboard, before a store is connected ---------- */
+.overlay--welcome { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: overlayIn .25s ease-out both; }
+@keyframes overlayIn { from { opacity: 0; } }
+.welcome { width: min(520px, 100%); overflow: hidden; animation: welcomeIn .4s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes welcomeIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.welcome__hero { position: relative; padding: 30px 24px 26px; background:
+  radial-gradient(120% 90% at 100% 0%, var(--brand-soft) 0%, transparent 60%),
+  radial-gradient(90% 80% at 0% 100%, var(--success-soft) 0%, transparent 55%), var(--surface-sub); border-bottom: 1px solid var(--line); }
+.welcome__hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 24px 24px; opacity: .35;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 50%, #000 30%, transparent 100%); mask-image: radial-gradient(70% 70% at 50% 50%, #000 30%, transparent 100%); }
+.welcome__flow { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; max-width: 380px; margin: 0 auto; }
+.welcome__node { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; }
+.welcome__node i { width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); color: var(--strong); box-shadow: var(--shadow-raised); }
+.welcome__node i svg { width: 28px; height: 28px; }
+.welcome__node--shopify i { background: var(--brand); color: #fff; }
+.welcome__node strong { color: var(--strong); font-weight: 650; display: block; }
+.welcome__node small { display: block; font-weight: 500; color: var(--subtle); font-size: 11.5px; }
+.welcome__path { position: relative; width: 96px; height: 24px; }
+.welcome__path::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--line-strong); }
+.welcome__path span { position: absolute; top: 50%; left: 0; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 2px var(--surface-sub); animation: travel 2.4s linear infinite; }
+.welcome__path span:nth-child(2) { animation-delay: .8s; }
+.welcome__path span:nth-child(3) { animation-delay: 1.6s; }
+.welcome__path svg { position: absolute; right: -6px; top: 50%; margin-top: -7px; width: 14px; height: 14px; color: var(--line-strong); }
+@keyframes travel { 0% { left: 0; opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1); } 85% { opacity: 1; transform: scale(1); } 100% { left: 100%; opacity: 0; transform: scale(.6); } }
+.welcome__step { position: absolute; top: 14px; left: 16px; }
+.welcome__body { padding: 22px 24px 6px; }
+.welcome__body h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; color: var(--strong); letter-spacing: -.01em; line-height: 1.25; }
+.welcome__body > p { margin: 0 0 16px; color: var(--muted); font-size: 14px; max-width: 46ch; }
+.welcome__points { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.welcome__points li { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: var(--text); }
+.welcome__points li > span:first-child { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--success-bg); color: var(--success); margin-top: 1px; }
+.welcome__points strong { color: var(--strong); font-weight: 600; }
+.welcome__plats { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--subtle); padding-bottom: 16px; }
+.welcome__plats .badge { background: var(--surface-sub); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font-weight: 600; }
+.welcome__foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 24px 20px; border-top: 1px solid var(--line); }
+.welcome__foot .btn--primary { min-height: 40px; padding: 8px 18px; font-size: 14px; }
+.welcome__foot .btn--primary svg { transition: transform .15s; }
+.welcome__foot .btn--primary:hover svg { transform: translateX(2px); }
+.welcome__time { font-size: 12.5px; color: var(--subtle); display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 520px) { .welcome__hero { padding: 26px 16px 22px; } .welcome__body { padding: 18px 16px 4px; } .welcome__foot { padding: 12px 16px 16px; } .welcome__foot .btn--primary { width: 100%; } .welcome__foot .btn:not(.btn--primary) { width: 100%; } }
+.proto { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-raised); font-size: 12.5px; max-width: calc(100vw - 32px); }
+.proto strong { color: var(--brand); white-space: nowrap; }
+.proto select { min-height: 30px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: inherit; min-width: 0; }
+@media (max-width: 760px) { .proto { left: 16px; right: 16px; } .proto select { flex: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="topbar">
+  <div class="topbar__mark" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h12l-1 10H5L4 7Z"/><path d="M7.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/></svg></div>
+  <div class="topbar__search"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>Search</div>
+  <div class="topbar__store"><span class="hide-sm">traning-6187</span><span class="topbar__avatar">TR</span></div>
+</header>
+
+<div class="admin">
+  <aside class="side" aria-label="Admin navigation">
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9 10 3l7 6v8H3V9Z"/></svg>Home</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h3"/></svg>Orders</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2 3 6v8l7 4 7-4V6l-7-4Z"/><path d="M3 6l7 4 7-4M10 10v8"/></svg>Products</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="7" r="3.5"/><path d="M3.5 17a6.5 6.5 0 0 1 13 0"/></svg>Customers</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M3 8h14"/></svg>Content</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17V9M8 17V5M13 17v-6M18 17V3"/></svg>Analytics</span>
+    <span class="side__item"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 10 9-6v12l-9-6Z"/><path d="M4 8v4"/></svg>Discounts</span>
+    <div class="side__label">Apps</div>
+    <span class="side__item side__app"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h10M10 4l3 3-3 3M17 13H7M10 10l-3 3 3 3"/></svg>Migration tool</span>
+    <nav class="side__sub" id="sidenav" aria-label="Migration tool"></nav>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="vtip" aria-hidden="true"></div>
+<div id="modal"></div>
+
+<script>
+(function () {
+  var SHOP = "traning-6187.myshopify.com";
+  var fmt = function (n) { return Number(n).toLocaleString("en-GB"); };
+
+  /* Every platform the prototype can migrate from. Counts are sample data. */
+  var PLAT = {
+    woocommerce: {
+      name: "WooCommerce", abbr: "Woo", version: "WooCommerce 8.9", host: "oakandreed.co.uk", color: "#7f54b3", blurb: "Products, customers, orders",
+      fields: [["key", "Consumer key", "ck_4f1a92c0e7b3d5a8f6c1"], ["secret", "Consumer secret", "cs_9e2b7d4a1f8c3e6b0a5d"]],
+      howto: ["Log in to your WordPress admin.", "Go to <strong>WooCommerce → Settings → Advanced → REST API</strong>.", "Click <strong>Add key</strong>, and set Permissions to <strong>Read</strong>.", "Click <strong>Generate API key</strong> and copy both keys here."],
+      counts: { collections: 46, products: 1248, customers: 3912, orders: 8904, posts: 64, redirects: null }, redirects: 1312,
+      statuses: [["completed", 7912, "Paid", "Fulfilled"], ["processing", 604, "Paid", "Unfulfilled"], ["refunded", 241, "Refunded", "Fulfilled"], ["cancelled", 147, "Voided", "Unfulfilled"]]
+    },
+    magento: {
+      name: "Magento", abbr: "M", version: "Magento 2.4.7", host: "brightlane-store.com", color: "#e8622c", blurb: "Products, customers, orders",
+      fields: [["token", "Access token", "mg_7c2e91b4d0a6f3e8b5c1a9d2"]],
+      howto: ["Log in to your Magento admin.", "Go to <strong>System → Extensions → Integrations</strong>.", "Click <strong>Add New Integration</strong>. Under <strong>API</strong>, allow read access to Catalog, Customers, Sales and Marketing.", "Click <strong>Activate</strong>, then copy the <strong>Access Token</strong> here."],
+      counts: { collections: 112, products: 3420, customers: 9810, orders: 21450, redirects: null }, redirects: 4180,
+      statuses: [["complete", 18920, "Paid", "Fulfilled"], ["processing", 1730, "Paid", "Unfulfilled"], ["closed", 520, "Refunded", "Fulfilled"], ["canceled", 280, "Voided", "Unfulfilled"]]
+    },
+    wordpress: {
+      name: "WordPress", abbr: "WP", version: "WordPress 6.6", host: "oakandreed-journal.com", color: "#21759b", blurb: "Blog posts",
+      fields: [["user", "Username (optional)", ""], ["apppw", "Application password (optional)", ""]],
+      howto: ["Published blog posts need no keys. Leave both fields empty.", "To include drafts, go to <strong>Users → Profile → Application Passwords</strong> in WordPress.", "Add a password and copy it here with your username."],
+      counts: { posts: 64, redirects: null }, redirects: 82, statuses: []
+    }
+  };
+  function P() { return PLAT[S.platform || "woocommerce"]; }
+  function src() { return String(S.url || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "") || P().host; }
+  function sampleFields(key) { var f = {}; PLAT[key].fields.forEach(function (x) { f[x[0]] = x[2]; }); return f; }
+  function available() { return ENT.filter(function (e) { return e.count !== undefined; }).map(function (e) { return e.key; }); }
+
+  var STAGES = [
+    "Connect your old store", "Run a free demo", "Check the demo", "Choose a plan",
+    "Full migration", "Fix issues", "Sync last changes", "Complete"
+  ];
+
+  var ENT = [
+    { key: "collections", label: "Categories", to: "Collections" },
+    { key: "products", label: "Products" },
+    { key: "customers", label: "Customers" },
+    { key: "orders", label: "Orders", to: "needs Products and Customers" },
+    { key: "posts", label: "Blog posts" },
+    { key: "redirects", label: "Old page links", to: "sends old links to the new pages, so Google rankings are kept" }
+  ];
+  /* What can be picked inside Categories and Products. [key, label, hint, required] */
+  var SUB = {
+    collections: [
+      ["name", "Name and description", "", true],
+      ["image", "Category image", ""],
+      ["tree", "Parent and child categories", "kept as a nested menu"],
+      ["links", "Products in each category", "needs Products"],
+      ["seo", "SEO title and description", ""]
+    ],
+    products: [
+      ["basic", "Title and description", "", true],
+      ["price", "Prices and sale prices", ""],
+      ["images", "Images and gallery", ""],
+      ["variants", "Variants", "size, colour and other options"],
+      ["sku", "SKU and barcode", ""],
+      ["stock", "Stock quantity", ""],
+      ["tags", "Tags", ""],
+      ["weight", "Weight and dimensions", "used for shipping rates"],
+      ["seo", "SEO title and description", ""],
+      ["custom", "Custom fields", "saved as Shopify metafields"]
+    ]
+  };
+  function allSubs() { var o = {}; Object.keys(SUB).forEach(function (k) { o[k] = SUB[k].map(function (s) { return s[0]; }); }); return o; }
+  function subCount(k) { return S.subs[k].length + " of " + SUB[k].length + " details"; }
+
+  /* count follows the platform: a number, null for "made automatically", undefined when the platform has none */
+  ENT.forEach(function (e) {
+    Object.defineProperty(e, "count", { get: function () { var c = P().counts; return e.key in c ? c[e.key] : undefined; } });
+  });
+
+  var MILES = [
+    { t: "Connect your store", s: [0] },
+    { t: "Try a free demo", s: [1, 2] },
+    { t: "Move everything", s: [3, 4] },
+    { t: "Fix and sync", s: [5, 6] }
+  ];
+  function mileOf(stage) { return MILES.findIndex(function (m) { return m.s.indexOf(stage) !== -1; }); }
+
+  var NEXT = {
+    0: ["We read your products, customers and orders.", "We show you how many we found.", "Nothing in your old store is changed."],
+    1: ["We copy 20 of each type into Shopify.", "It takes under a minute.", "It is free, and you can delete it afterwards."],
+    2: ["Open a few items in Shopify.", "Compare them with your old store.", "If they look right, continue to the full move."],
+    3: ["Pick the plan that fits your store size.", "Shopify adds it to your normal Shopify bill.", "You can cancel any time."],
+    4: ["We copy everything in the background.", "You can close this page while it runs.", "We email you when it is finished."],
+    5: ["Each problem comes with a one-click fix.", "Fixed items move across straight away.", "You can skip a problem and fix it later."],
+    6: ["Run this just before you switch your domain.", "It copies orders and customers that arrived since the move.", "It takes a minute or two."]
+  };
+  function nextBox(stage) {
+    if (!NEXT[stage]) return "";
+    return '<div class="next"><div class="next__title">What happens next</div><ol>' + NEXT[stage].map(function (l) { return "<li>" + l + "</li>"; }).join("") + '</ol></div>';
+  }
+
+  var ISSUES = [
+    { id: "opts", entity: "products", count: 14, title: "14 products skipped: more than 3 options",
+      why: "Shopify allows up to 3 options per product, such as Size, Colour and Material. These products have 4 or 5.",
+      fix: "Merge the extra options into one option and import them.", action: "Merge and import" },
+    { id: "phone", entity: "customers", count: 9, title: "9 customers have a phone number Shopify rejects",
+      why: "Shopify needs phone numbers in international format, for example +44 7700 900123.",
+      fix: "Import these customers without the phone number. It is kept in a customer note.", action: "Import without phone" },
+    { id: "img", entity: "products", count: 8, title: "8 product images could not be downloaded",
+      why: "Your old store answered \"404 Not found\" for these image addresses.",
+      fix: "Upload the images again in your old store, then try again.", action: "Try again" },
+    { id: "orders", entity: "orders", count: 6, title: "6 orders contain products that were deleted",
+      why: "These products no longer exist in your old store, so the order lines have nothing to link to.",
+      fix: "Import the lines as custom items with the original title and price.", action: "Import as custom items" }
+  ];
+
+  function statuses() {
+    return P().statuses.map(function (s) { return { key: s[0], count: s[1], pay: s[2], ful: s[3] }; });
+  }
+
+  var DEMO_ROWS = {
+    products: [["Linen apron, natural", "Active", "#2219"], ["Oak serving board, large", "Active", "#2231"], ["Reed diffuser, fig", "Draft", "#2240"], ["Stoneware mug set (4)", "Active", "#2244"], ["Wool throw, moss", "Active", "#2258"]],
+    customers: [["Amelia Hart", "amelia.hart@example.com", "#118"], ["Rohan Mehta", "rohan.m@example.com", "#121"], ["Grace O'Neill", "grace.oneill@example.com", "#130"], ["Tomasz Nowak", "t.nowak@example.com", "#134"], ["Priya Shah", "priya.shah@example.com", "#139"]],
+    orders: [["#1045 · Amelia Hart", "Paid · Fulfilled", "£64.00"], ["#1046 · Rohan Mehta", "Paid · Fulfilled", "£112.50"], ["#1047 · Grace O'Neill", "Refunded", "£28.00"], ["#1048 · Tomasz Nowak", "Paid · Unfulfilled", "£41.99"], ["#1049 · Priya Shah", "Paid · Fulfilled", "£86.00"]]
+  };
+
+  function initial() {
+    return {
+      stage: 0, page: "dashboard", wiz: 1, platform: "woocommerce",
+      url: "https://" + PLAT.woocommerce.host, fields: sampleFields("woocommerce"), projects: [],
+      connected: false, entities: ENT.map(function (e) { return e.key; }),
+      draft: false, demoRun: false, plan: null,
+      run: null, history: [], fixed: [], syncState: "idle", subs: allSubs(), dash: { range: 30, store: "all", view: "total" },
+      notify: true, paused: false, demoTab: "products", retention: "30"
+    };
+  }
+  var S = initial();
+
+  /* ---------- icons ---------- */
+  var I = {
+    check: '<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="3"><path d="m4 10.5 4 4 8-9"/></svg>',
+    checkLg: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m4 10.5 4 4 8-9"/></svg>',
+    left: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 4-6 6 6 6"/></svg>',
+    ext: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 3h6v6M17 3l-8 8M14 12v4H4V6h4"/></svg>',
+    plus: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 4v12M4 10h12"/></svg>',
+    plug: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v4M13 2v4M5 6h10v3a5 5 0 0 1-10 0V6ZM10 14v4"/></svg>',
+    spark: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M4.5 4.5l2.5 2.5M13 13l2.5 2.5M4.5 15.5 7 13M13 7l2.5-2.5"/></svg>',
+    alert: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 2 17h16L10 3Z"/><path d="M10 8v4M10 14.5v.5"/></svg>',
+    info: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5M10 6.5v.5"/></svg>',
+    lock: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg>',
+    store: '<svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h14v9H3zM2 8l2-5h12l2 5"/><path d="M8 17v-5h4v5"/></svg>',
+    migrate: '<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7h10M10 4l3 3-3 3M17 13H7M10 10l-3 3 3 3"/></svg>',
+    chev: '<svg class="chev" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 8 5 5 5-5"/></svg>',
+    party: '<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 17 4-11 7 7-11 4Z"/><path d="M12 3v2M16 4l-1.5 1.5M17 8h-2"/></svg>'
+  };
+
+  /* ---------- derived numbers ---------- */
+  function chosenEnt() { return ENT.filter(function (e) { return S.entities.indexOf(e.key) !== -1; }); }
+  function totalRecords() { return chosenEnt().reduce(function (s, e) { return s + (e.count || 0); }, 0); }
+  function demoTotal() { return chosenEnt().reduce(function (s, e) { return s + (e.count ? Math.min(20, e.count) : 0); }, 0); }
+  function issuesLeft() { return ISSUES.filter(function (i) { return S.fixed.indexOf(i.id) === -1; }); }
+  function issueCount() { return issuesLeft().reduce(function (s, i) { return s + i.count; }, 0); }
+  function eta(n) { var m = Math.max(5, Math.round(n / 340)); return m >= 60 ? Math.floor(m / 60) + " h " + (m % 60) + " min" : "about " + m + " min"; }
+  function planFits() { return S.plan && (S.plan.limit === null || totalRecords() <= S.plan.limit); }
+
+  /* ---------- small builders ---------- */
+  function badge(status) {
+    var map = {
+      running: ['<span class="badge badge--info pulse"><span class="dot"></span>Running</span>'],
+      paused: ['<span class="badge badge--warning"><span class="dot"></span>Paused</span>'],
+      done: ['<span class="badge badge--success">Completed</span>'],
+      issues: ['<span class="badge badge--warning">Completed · ' + issueCount() + ' to fix</span>'],
+      demo: ['<span class="badge badge--brand">Demo</span>'],
+      full: ['<span class="badge">Full</span>']
+    };
+    return (map[status] || [""])[0];
+  }
+  function header(title, sub, actions, back) {
+    return (back ? '<button class="back" type="button" data-go="' + back[0] + '">' + I.left + back[1] + '</button>' : "") +
+      '<div class="page-header"><div><h1>' + title + '</h1>' + (sub ? '<p class="page-header__sub">' + sub + '</p>' : "") + '</div>' +
+      (actions ? '<div class="row">' + actions + '</div>' : "") + '</div>';
+  }
+  /* a compact chip for page headers: plan name and usage this month; click opens Plans */
+  function planPill() {
+    var used = S.history.filter(function (h) { return h.type === "full"; }).reduce(function (s, h) { return s + h.records; }, 0);
+    if (!S.plan) return '<button class="plan-pill" type="button" data-go="plans" aria-label="Free plan, demos only. See plans"><strong>Free</strong><span>Demos only</span><span class="plan-pill__sep"></span><span class="plan-pill__link">See plans</span></button>';
+    var pct = S.plan.limit ? used / S.plan.limit * 100 : 0, tone = pct >= 100 ? " plan-pill--over" : pct >= 80 ? " plan-pill--warn" : "";
+    return '<button class="plan-pill' + tone + '" type="button" data-go="plans" aria-label="' + S.plan.name + ' plan, ' + fmt(used) + ' of ' + (S.plan.limit === null ? "unlimited" : fmt(S.plan.limit)) + ' records used this month. See plans"><strong>' + S.plan.name + '</strong>' +
+      (S.plan.limit ? '<span class="plan-pill__meter" aria-hidden="true"><span style="width:' + Math.min(100, Math.round(pct)) + '%"></span></span>' : "") +
+      '<span class="num">' + fmt(used) + (S.plan.limit === null ? " records" : " / " + fmt(S.plan.limit)) + '</span></button>';
+  }
+  function newBtn() {
+    var label = S.draft && S.stage === 0 ? "Continue draft" : "New migration";
+    return '<button class="btn btn--primary" type="button" data-act="new">' + I.plus + label + '</button>';
+  }
+  function appTabs() {
+    var pages = [["dashboard", "Dashboard"], ["home", "Connector"], ["migrations", "Migrations"], ["settings", "Settings"], ["plans", "Plans"], ["help", "Help"]];
+    var cur = navKey();
+    return '<nav class="apptabs" aria-label="Migration tool">' + pages.map(function (p) {
+      return '<button type="button" data-go="' + p[0] + '"' + (cur === p[0] ? ' aria-current="page"' : "") + '>' + p[1] + '</button>';
+    }).join("") + '</nav>';
+  }
+  function navKey() {
+    if (["wizard", "progress", "results", "demo"].indexOf(S.page) !== -1) return S.page === "wizard" ? "migrations" : (S.page === "demo" ? "home" : "migrations");
+    return S.page;
+  }
+
+  /* ============ HOME ============ */
+  function journeyPanel() {
+    var s = S.stage;
+    var running = S.run && !S.run.finished;
+    var m = mileOf(s);
+    var html = '<span class="eyebrow">' + (m === -1 ? "All steps done" : 'Step ' + (m + 1) + ' of ' + MILES.length + ' · ' + MILES[m].t + (MILES[m].s.length > 1 ? " (part " + (MILES[m].s.indexOf(s) + 1) + " of 2)" : "")) + '</span>';
+
+    if (running && ((s === 1 && S.run.type === "demo") || (s === 4 && S.run.type === "full"))) {
+      var p = runPercent();
+      html += '<h2 class="journey__title">' + (S.run.type === "demo" ? "Your demo is running" : "Your full migration is running") + '</h2>' +
+        '<p class="journey__body">' + (S.paused ? "Paused. Nothing new is being created until you resume." : "You can close this page. We will email you when it is finished.") + '</p>' +
+        '<div class="journey__meter"><div class="progress"><span style="width:' + p + '%"></span></div><span class="num">' + p + '%</span></div>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-go="progress">View progress</button></div>';
+      return html;
+    }
+
+    if (s === 0) {
+      html += '<h2 class="journey__title">' + (S.projects.length ? "Connect the next store you want to move" : "Connect the store you are moving from") + '</h2>' +
+        '<p class="journey__body">WooCommerce, Magento or WordPress. We only need read access to count what you have. Nothing in your old store is changed or deleted.</p>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-act="new">' + I.plug + (S.draft ? "Continue connecting" : "Connect store") + '</button>' +
+        '<button class="btn btn--plain" type="button" data-go="help">How do I create API keys?</button></div>';
+    } else if (s === 1) {
+      html += '<h2 class="journey__title">Run a free demo</h2>' +
+        '<p class="journey__body">The demo moves 20 of each type (' + fmt(demoTotal()) + ' records) into your store so you can check them before paying for anything. You can delete it with one click.</p>' +
+        '<div class="facts"><div><strong>' + src() + '</strong><span>Connected · ' + P().version + '</span></div><div><strong class="num">' + fmt(totalRecords()) + '</strong><span>records found</span></div></div>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-act="start-demo">' + I.spark + 'Run free demo</button>' +
+        '<button class="btn" type="button" data-act="open-wizard" data-step="2">Change what is included</button></div>';
+    } else if (s === 2) {
+      html += '<h2 class="journey__title">Your demo is ready to check</h2>' +
+        '<p class="journey__body">' + fmt(demoTotal()) + ' records were created in your store. Open a few products, customers and orders in Shopify and check that prices, images and order totals look right.</p>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-go="demo">Review demo</button>' +
+        '<button class="btn" type="button" data-act="demo-ok">Looks good, continue</button></div>';
+    } else if (s === 3) {
+      html += '<h2 class="journey__title">Choose a plan for the full migration</h2>' +
+        '<p class="journey__body">Your store has ' + fmt(totalRecords()) + ' records. The Growth plan covers all of them. Billing goes through Shopify, so it appears on your Shopify invoice.</p>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-go="plans">Choose a plan</button></div>';
+    } else if (s === 4) {
+      html += '<h2 class="journey__title">Start the full migration</h2>' +
+        '<p class="journey__body">Everything is set. The migration runs in the background and takes ' + eta(totalRecords()) + '. Your old store keeps working the whole time.</p>' +
+        '<div class="facts"><div><strong class="num">' + fmt(totalRecords()) + '</strong><span>records</span></div><div><strong>' + (S.plan ? S.plan.name : "") + '</strong><span>plan</span></div><div><strong>' + eta(totalRecords()) + '</strong><span>estimated</span></div></div>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-act="confirm-full">Begin full migration</button>' +
+        '<button class="btn" type="button" data-act="open-wizard" data-step="3">Review settings</button></div>';
+    } else if (s === 5) {
+      var left = issueCount();
+      html += '<h2 class="journey__title">' + (left ? fmt(left) + " records need your attention" : "All issues are fixed") + '</h2>' +
+        '<p class="journey__body">' + (left ? "Everything else moved across. Each issue comes with a one-click fix." : "Every record is now in Shopify.") + '</p>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-go="results">' + (left ? "Fix issues" : "View results") + '</button>' +
+        (left ? "" : '<button class="btn" type="button" data-act="to-sync">Continue</button>') + '</div>';
+    } else if (s === 6) {
+      html += '<h2 class="journey__title">Sync changes since your migration</h2>' +
+        '<p class="journey__body">Run this just before you connect your domain. It brings over new orders, new customers and stock changes from your old store since the full migration finished.</p>';
+      if (S.syncState === "running") {
+        html += '<div class="journey__meter"><div class="progress"><span style="width:60%"></span></div><span>Checking for changes…</span></div>';
+      } else if (S.syncState === "done") {
+        html += '<div class="banner banner--success">' + I.checkLg + '<div class="banner__body"><strong>Synced 42 new orders, 9 customers and stock for 118 products.</strong></div></div>' +
+          '<div class="row"><button class="btn btn--primary" type="button" data-act="finish">Finish migration</button><button class="btn" type="button" data-act="sync">Sync again</button></div>';
+      } else {
+        html += '<div class="row"><button class="btn btn--primary" type="button" data-act="sync">Sync changes now</button><button class="btn btn--plain" type="button" data-act="finish">Skip and finish</button></div>';
+      }
+    } else {
+      var full = S.history.filter(function (h) { return h.type === "full"; }).pop();
+      html += '<div class="row"><span class="empty__art" style="width:44px;height:44px">' + I.party + '</span><h2 class="journey__title">Your migration is complete</h2></div>' +
+        '<p class="journey__body">Everything from ' + src() + ' is now in Shopify. You can run a new migration from another store at any time.</p>' +
+        '<div class="facts"><div><strong class="num">' + fmt(full ? full.records : totalRecords()) + '</strong><span>records moved</span></div>' +
+        '<div><strong class="num">' + fmt(P().redirects) + '</strong><span>old page links redirected</span></div>' +
+        '<div><strong>' + P().name + '</strong><span>' + src() + '</span></div></div>' +
+        '<div class="row"><button class="btn btn--primary" type="button" data-go="results">View results</button><button class="btn" type="button" data-act="new">' + I.plus + 'New migration</button></div>';
+    }
+    return html + nextBox(s);
+  }
+
+  function pageHome() {
+    var curMile = S.stage >= 7 ? MILES.length : mileOf(S.stage);
+    var steps = MILES.map(function (mi, i) {
+      var st = i < curMile ? "done" : i === curMile ? "current" : "";
+      return '<li class="jstep' + (st ? " jstep--" + st : "") + '"' + (st === "current" ? ' aria-current="step"' : "") + '><span class="jstep__mark">' + (st === "done" ? I.check : i + 1) + '</span><span class="jstep__label">' + mi.t +
+        (st === "current" ? '<span class="jstep__now">Now: ' + STAGES[S.stage] + '</span>' : "") + '</span></li>';
+    }).join("");
+
+    return '<div class="page">' + header("Move your store to Shopify", S.connected ? "From <strong>" + P().name + " · " + src() + "</strong> to " + SHOP : "Into " + SHOP, planPill() + newBtn()) +
+      '<div class="reassure"><span>' + I.check + 'Your old store is never changed</span><span>' + I.check + 'The demo is free</span><span>' + I.check + 'You can pause or stop at any time</span></div>' +
+      '<section class="card journey" aria-label="Your migration"><ol class="journey__steps">' + steps + '</ol><div class="journey__panel">' + journeyPanel() + '</div></section>' +
+      projectsCard() + '</div>';
+  }
+
+  /* Stores moved earlier. Starting a migration from a different store files the current one here. */
+  function projectsCard() {
+    if (!S.projects.length) return "";
+    return '<section class="card"><div class="card__sec"><h2 class="card__title">Earlier stores</h2><p class="muted small">Stores you have already moved into ' + SHOP + '.</p></div>' +
+      '<div class="table-wrap"><table><thead><tr><th>Store</th><th>Platform</th><th>Status</th><th class="num">Moved</th><th>Last activity</th></tr></thead><tbody>' +
+      S.projects.slice().reverse().map(function (p) {
+        return '<tr><td><strong style="color:var(--strong);font-weight:600">' + p.host + '</strong></td><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="tile__logo tile__logo--xs" style="background:' + p.color + '">' + p.abbr + '</span>' + p.name + '</span></td>' +
+          '<td>' + (p.done ? '<span class="badge badge--success">Completed</span>' : '<span class="badge">Not finished</span>') + '</td><td class="num">' + (p.records ? fmt(p.records) : "—") + '</td><td>' + p.date + '</td></tr>';
+      }).join("") + '</tbody></table></div></section>';
+  }
+
+  /* Files the current store under "Earlier stores" and opens a clean wizard at step 1. */
+  function startNewStore() {
+    clearInterval(timer);
+    if (S.connected) {
+      var full = S.history.filter(function (h) { return h.type === "full"; }).pop();
+      var d = new Date();
+      S.projects.push({ host: src(), name: P().name, abbr: P().abbr, color: P().color, done: S.stage >= 5, records: full ? full.records : 0,
+        date: d.getDate() + " " + d.toLocaleString("en-GB", { month: "short" }) });
+    }
+    var keep = { plan: S.plan, projects: S.projects, notify: S.notify };
+    S = initial();
+    S.plan = keep.plan; S.projects = keep.projects; S.notify = keep.notify;
+    S.platform = null; S.url = ""; S.fields = {}; S.draft = true; S.wiz = 1;
+    go("wizard");
+  }
+
+  function newChoice() {
+    var cur = src(), finished = S.stage >= 5;
+    modalChoice("Start a new migration", [
+      { act: "choice-same", title: finished ? "Run again from " + cur : "Continue with " + cur,
+        body: finished ? "Move more data from the same " + P().name + " store, for example new products." : "Pick up where you left off: " + STAGES[S.stage].toLowerCase() + "." },
+      { act: "choice-new", title: "Move from a different store", primary: true,
+        body: "Start again at step 1 and connect WooCommerce, Magento or WordPress. " + cur + " is kept under Earlier stores." }
+    ]);
+  }
+
+  /* Run history: one row per finished run, with a meter of how much landed in Shopify. */
+  function historyCard(title) {
+    var rows = S.history.slice().reverse();
+    var body;
+    if (!rows.length) {
+      body = '<div class="card__sec"><p class="muted">Finished migrations appear here.</p></div>';
+    } else {
+      body = '<div class="runs">' + rows.map(function (h) {
+        var full = h.type === "full", left = full ? issueCount() : 0, moved = h.records - left;
+        var target = h.type === "demo" ? "demo" : "results";
+        var name = (full ? "Full migration" : "Free demo") + " #" + h.id;
+        var icon = full ? (left ? " run__icon--warn" : " run__icon--ok") : "";
+        var pct = h.records ? Math.round(moved / h.records * 100) : 100;
+        return '<div class="run" role="link" tabindex="0" data-go="' + target + '" aria-label="View ' + name + '">' +
+          '<span class="run__icon' + icon + '">' + (full ? I.migrate : I.spark) + '</span>' +
+          '<div class="run__text"><div class="run__title">' + name + badge(full && left ? "issues" : "done") + '</div>' +
+            '<div class="run__meta"><span>' + h.date + '</span><span>' + (full ? "took 41 min" : "under a minute") + '</span><span>' + (full ? P().name + " → Shopify" : "20 of each type") + '</span></div></div>' +
+          '<div class="run__meter"><span><b>' + fmt(moved) + '</b> of ' + fmt(h.records) + (full ? " moved" : " created") + (left ? ' · <b style="color:var(--critical)">' + fmt(left) + '</b> to fix' : "") + '</span>' +
+            '<span class="run__bar" aria-hidden="true"><span style="width:' + pct + '%"></span>' + (left ? '<span style="width:' + Math.max(2, 100 - pct) + '%"></span>' : "") + '</span></div>' +
+          '<div class="run__actions">' + (left ? '<button class="btn btn--primary btn--sm" type="button" data-go="results">Fix issues</button>' : "") + '<button class="btn btn--sm" type="button" data-go="' + target + '">View</button></div>' +
+        '</div>';
+      }).join("") + '</div>' +
+      '<div class="runs__foot"><span>' + rows.length + (rows.length === 1 ? " run" : " runs") + ' · ' + fmt(rows.reduce(function (s, h) { return s + h.records; }, 0)) + ' records in total</span><button class="btn btn--plain btn--sm" type="button" data-act="toast" data-msg="Downloads history.csv">Download history (CSV)</button></div>';
+    }
+    return '<section class="card"><div class="card__sec row row--between"><div><h2 class="card__title">' + title + '</h2><p class="muted small">Newest first. Click a run to open it.</p></div></div>' + body + '</section>';
+  }
+
+  /* Overview strip: where data is moving from and to, plus the headline numbers. */
+  function migrationOverview() {
+    var full = S.history.filter(function (h) { return h.type === "full"; }).pop();
+    var left = full ? issueCount() : 0;
+    var demo = S.history.filter(function (h) { return h.type === "demo"; }).pop();
+    var moved = full ? full.records - left : demo ? demo.records : 0;
+    var last = S.history.length ? S.history[S.history.length - 1] : null;
+    var arrow = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg>';
+    var bag = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h12l-1 10H5L4 7Z"/><path d="M7.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/></svg>';
+    return '<section class="card mg-over"><div class="mg-route">' +
+        '<div class="rv-node"><i style="background:' + P().color + '">' + P().abbr + '</i><span><strong>' + src() + '</strong><small>' + P().version + '</small><small class="rv-ok">' + I.check + 'Connected, read-only</small></span></div>' +
+        '<div class="welcome__path" aria-hidden="true"><span></span><span></span><span></span>' + arrow + '</div>' +
+        '<div class="rv-node rv-node--to"><i class="rv-node__shop">' + bag + '</i><span><strong>Shopify</strong><small>' + SHOP + '</small><small class="rv-ok">' + I.check + 'Receiving</small></span></div>' +
+      '</div><div class="mg-stats">' +
+        '<div class="mg-stat"><span class="mg-stat__label">Runs</span><span class="mg-stat__value">' + S.history.length + '</span><span class="mg-stat__foot">' + S.history.filter(function (h) { return h.type === "demo"; }).length + ' demo · ' + S.history.filter(function (h) { return h.type === "full"; }).length + ' full</span></div>' +
+        '<div class="mg-stat"><span class="mg-stat__label">Records in Shopify</span><span class="mg-stat__value">' + fmt(moved) + '</span><span class="mg-stat__foot">' + (full ? "of " + fmt(totalRecords()) + " found in your store" : demo ? "from the free demo" : fmt(totalRecords()) + " found, none moved yet") + '</span></div>' +
+        '<div class="mg-stat"><span class="mg-stat__label">To fix</span><span class="mg-stat__value' + (left ? " mg-stat__value--bad" : full ? " mg-stat__value--ok" : "") + '">' + (full ? fmt(left) : "—") + '</span><span class="mg-stat__foot">' + (left ? "Each has a one-click fix" : full ? "All clear" : "After the full migration") + '</span></div>' +
+        '<div class="mg-stat"><span class="mg-stat__label">Last finished</span><span class="mg-stat__value" style="font-size:17px">' + (last ? last.date : "—") + '</span><span class="mg-stat__foot">' + (last ? (last.type === "full" ? "Full migration" : "Free demo") + " #" + last.id : "No runs yet") + '</span></div>' +
+      '</div></section>';
+  }
+
+  function pageMigrations() {
+    var draft = S.draft && S.stage === 0;
+    var running = S.run && !S.run.finished;
+    var live = "";
+    if (draft) {
+      live = '<section class="card"><div class="live"><span class="live__icon live__icon--draft">' + I.plug + '</span>' +
+        '<div class="live__title">Draft migration<span class="badge">Not started</span></div>' +
+        '<button class="btn btn--primary btn--sm" type="button" data-act="new">Continue</button>' +
+        '<div class="live__meter"><span>Step ' + S.wiz + ' of 3 · ' + ["Connect", "Choose what to move", "Review and start"][S.wiz - 1] + '</span></div></div></section>';
+    } else if (running) {
+      var cur = S.run.rows.find(function (r) { return r.done < r.total; });
+      live = '<section class="card"><div class="live"><span class="live__icon">' + (S.run.type === "demo" ? I.spark : I.migrate) + '</span>' +
+        '<div class="live__title">' + (S.run.type === "demo" ? "Free demo" : "Full migration") + ' #' + S.run.id + badge(S.paused ? "paused" : "running") + '</div>' +
+        '<button class="btn btn--sm" type="button" data-go="progress">View progress</button>' +
+        '<div class="live__meter"><div class="progress progress--thin"><span style="width:' + runPercent() + '%"></span></div><span class="num">' + runPercent() + '%</span><span>' + (S.paused ? "Paused" : cur ? "Moving " + cur.label.toLowerCase() : "Finishing") + '</span></div></div></section>';
+    }
+    var empty = '<section class="card"><div class="empty"><div class="empty__art">' + I.migrate + '</div><h2>No migrations yet</h2><p class="muted" style="max-width:46ch">Start with the free demo. It moves 20 of each type so you can check them in Shopify first.</p>' + newBtn() + '</div></section>';
+    return '<div class="page">' + header("Migrations", S.connected ? "Every run from <strong>" + src() + "</strong> into Shopify, newest first." : "Connect a store to start your first migration.", planPill() + newBtn()) +
+      (S.connected ? migrationOverview() : "") + live +
+      (S.history.length ? historyCard("Run history") : (draft || running ? "" : empty)) + projectsCard() + '</div>';
+  }
+
+  /* ============ WIZARD ============ */
+  function pageWizard() {
+    var step = S.page === "progress" ? 4 : S.wiz;
+    var run = S.run || S.lastRun;
+    var labels = ["Connect", "Choose what to move", "Review and start", run && step === 4 && run.type === "full" ? "Full migration" : "Demo"];
+    var stepper = '<ol class="stepper" aria-label="Steps">' + labels.map(function (l, i) {
+      var n = i + 1; var st = n < step || (n === 4 && run && run.finished && step === 4) ? "done" : n === step ? "current" : "";
+      return '<li class="' + st + '"' + (n === step ? ' aria-current="step"' : "") + '>' + n + '. ' + l + '</li>';
+    }).join("") + '</ol>';
+
+    if (step === 4) {
+      var title = run ? (run.type === "demo" ? "Free demo" : "Full migration") + " #" + run.id + " " + (run.finished ? badge("done") : S.paused ? badge("paused") : badge("running")) : "Progress";
+      return '<div class="page page--narrow">' + header(title, "From " + P().name + " · " + src() + " to " + SHOP, "", ["home", "Connector"]) +
+        stepper + '<section class="card">' + progressBody(run) + '</section>' +
+        (run && !run.finished ? '<div class="banner banner--info">' + I.info + '<div class="banner__body">You can close this page or leave the app. The migration keeps running on our servers.</div></div>' : "") + '</div>';
+    }
+
+    var body = S.wiz === 1 ? wizConnect() : S.wiz === 2 ? wizData() : wizReview();
+    var nextDisabled = S.wiz === 1 && !S.connected;
+    var footer = '<div class="footer-bar"><button class="btn btn--plain btn--plain-critical" type="button" data-act="discard">Discard draft</button><div class="row">' +
+      (S.wiz > 1 ? '<button class="btn" type="button" data-act="wiz-back">Back</button>' : "") +
+      (S.wiz < 3 ? '<button class="btn btn--primary" type="button" data-act="wiz-next"' + (nextDisabled ? " disabled" : "") + '>Continue</button>' : wizRunButtons()) + '</div></div>';
+
+    return '<div class="page page--narrow">' + header("New migration <span class=\"badge\">Draft</span>", "Your choices are saved as you go. Leave any time and continue later.", "", ["home", "Connector"]) +
+      stepper + '<section class="card">' + body + footer + '</section>' +
+      '<p class="muted small row" style="justify-content:center">' + I.lock + 'Keys are encrypted. We only ever read from your old store.</p></div>';
+  }
+
+  function wizRunButtons() {
+    if (!S.demoRun) {
+      return '<button class="btn" type="button" data-act="' + (S.plan ? "confirm-full" : "need-plan") + '">' + (S.plan ? "Skip demo, begin full migration" : "Choose a plan") + '</button>' +
+        '<button class="btn btn--primary" type="button" data-act="start-demo">' + I.spark + 'Run free demo</button>';
+    }
+    return S.plan ? '<button class="btn btn--primary" type="button" data-act="confirm-full">Begin full migration</button>'
+      : '<button class="btn btn--primary" type="button" data-act="need-plan">Choose a plan</button>';
+  }
+
+  function wizConnect() {
+    var tiles = Object.keys(PLAT).map(function (k) {
+      var t = PLAT[k];
+      return '<label class="tile"><input type="radio" name="platform" value="' + k + '"' + (S.platform === k ? " checked" : "") + '>' +
+        '<span class="tile__logo" style="background:' + t.color + '">' + t.abbr + '</span><span class="tile__text"><span class="tile__name">' + t.name + '</span><span class="muted small">' + t.blurb + '</span></span></label>';
+    }).join("") +
+      '<label class="tile tile--off"><input type="radio" name="platform" disabled><span class="tile__logo" style="background:var(--subtle)">BC</span><span class="tile__text"><span class="tile__name">BigCommerce</span><span class="muted small">Coming soon</span></span></label>';
+
+    var intro = '<div class="card__sec"><h2 class="wiz-title">Where are you moving from?</h2><p class="muted">' +
+      (S.projects.length ? "Pick the platform of the store you want to move next." : "Pick your platform, then paste a read-only key.") + '</p></div>' +
+      '<div class="card__sec"><div class="tiles" role="radiogroup" aria-label="Platform">' + tiles + '</div></div>';
+
+    if (!S.platform) {
+      return intro + '<div class="card__sec"><div class="scan__empty" style="min-height:120px"><div>' + I.store + '<p>Choose a platform above to continue.</p></div></div></div>';
+    }
+
+    var p = P();
+    var scan = S.connected
+      ? '<div class="muted small">Connection result</div><div class="ok">' + I.checkLg + 'Connected · ' + p.version + '</div><div class="muted small" style="margin-top:8px">We found:</div><ul>' +
+        ENT.filter(function (e) { return e.count; }).map(function (e) { return '<li><span>' + e.label + '</span><strong>' + fmt(e.count) + '</strong></li>'; }).join("") + '</ul>'
+      : S.testing
+        ? '<div class="scan__empty"><div><span class="btn is-loading" style="box-shadow:none;background:none"></span><p>Connecting and counting your data…</p></div></div>'
+        : '<div class="scan__empty"><div>' + I.store + '<p>Test the connection to see<br>what we find in your store.</p></div></div>';
+
+    var fields = p.fields.map(function (f) {
+      return '<div class="field"><label for="f-' + f[0] + '">' + f[1] + '</label><input class="input input--mono" id="f-' + f[0] + '" data-field="' + f[0] + '" type="password" autocomplete="off" value="' + (S.fields[f[0]] || "") + '"></div>';
+    }).join("");
+
+    return intro +
+      '<div class="card__sec"><div class="grid2"><div class="stack">' +
+      '<div class="field"><label for="f-url">' + (S.platform === "wordpress" ? "Site address" : "Store address") + '</label><input class="input" id="f-url" data-bind="url" type="url" placeholder="https://your-store.com" value="' + S.url + '"></div>' +
+      fields +
+      '<details class="howto"' + (S.connected ? "" : " open") + '><summary>' + I.info + (S.platform === "wordpress" ? "Do I need a password?" : "Where do I find " + (p.fields.length > 1 ? "these keys" : "this token") + "?") + '</summary><ol>' +
+      p.howto.map(function (h) { return "<li>" + h + "</li>"; }).join("") + '</ol></details>' +
+      '<div class="row"><button class="btn' + (S.connected ? "" : " btn--primary") + '" type="button" data-act="test">' + I.plug + (S.connected ? "Test again" : "Test connection") + '</button></div>' +
+      '</div><div class="scan" aria-live="polite">' + scan + '</div></div></div>';
+  }
+
+  function wizData() {
+    var rows = ENT.filter(function (e) { return e.count !== undefined; }).map(function (e) {
+      var on = S.entities.indexOf(e.key) !== -1;
+      var sub = SUB[e.key];
+      var partial = on && sub && S.subs[e.key].length < sub.length;
+      var row = '<label class="pick__main"><input type="checkbox" data-ent="' + e.key + '"' + (on ? " checked" : "") + (partial ? " data-partial" : "") + '><span class="pick__text"><span class="pick__name">' + e.label + '</span>' +
+        (e.to ? ' <span class="muted small">' + (e.key === "collections" ? "→ " : "· ") + e.to + '</span>' : "") +
+        (sub && on ? '<span class="pick__summary">' + subCount(e.key) + '</span>' : "") + '</span><span class="pick__count">' + (e.count === null ? "auto" : fmt(e.count)) + '</span></label>';
+      if (!sub || !on) return '<div class="pick__row">' + row + '</div>';
+      var subs = '<fieldset class="pick__sub"><legend class="visually-hidden">' + e.label + ' details</legend><div class="pick__subhead"><span>What to include</span>' +
+        '<button class="btn btn--plain btn--sm" type="button" data-suball="' + e.key + '">' + (S.subs[e.key].length === sub.length ? "Only required" : "Select all") + '</button></div><div class="pick__grid">' +
+        sub.map(function (s) {
+          var checked = s[3] || S.subs[e.key].indexOf(s[0]) !== -1;
+          return '<label class="check"><input type="checkbox" data-sub="' + e.key + ':' + s[0] + '"' + (checked ? " checked" : "") + (s[3] ? " disabled" : "") + '>' +
+            '<span><span class="check__label">' + s[1] + '</span>' + (s[3] ? '<span class="help">Always included</span>' : s[2] ? '<span class="help">' + s[2] + '</span>' : "") + '</span></label>';
+        }).join("") + '</div></fieldset>';
+      return '<div class="pick__row pick__row--open">' + row + subs + '</div>';
+    }).join("");
+    return '<div class="card__sec"><h2 style="font-size:16px">What do you want to move?</h2><p class="muted">From <strong>' + src() + '</strong>. Everything is ticked; untick what you do not need.</p></div>' +
+      '<div class="pick">' + rows + '</div>';
+  }
+
+  var ENT_ICON = {
+    collections: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>',
+    products: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 2 3 6v8l7 4 7-4V6l-7-4Z"/><path d="M3 6l7 4 7-4M10 10v8"/></svg>',
+    customers: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="7" r="3.5"/><path d="M3.5 17a6.5 6.5 0 0 1 13 0"/></svg>',
+    orders: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h3"/></svg>',
+    posts: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M3 8h14M7 12h6"/></svg>',
+    redirects: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 10h10M10 6l4 4-4 4"/><path d="M17 4v12"/></svg>'
+  };
+  /* Step 3 summary: where the data goes, three headline figures, and one tile per data type */
+  function reviewSummary() {
+    var ents = chosenEnt(), total = totalRecords(), max = Math.max.apply(null, [1].concat(ents.map(function (e) { return e.count || 0; })));
+    var plan = !S.plan ? ["Free", '<span class="badge">Demo is free</span>', "Choose a plan before the full migration"]
+      : planFits() ? [S.plan.name, '<span class="badge badge--success">Fits</span>', fmt(total) + " of " + (S.plan.limit === null ? "unlimited" : fmt(S.plan.limit)) + " records this month"]
+      : [S.plan.name, '<span class="badge badge--critical">Over limit</span>', "Limit is " + fmt(S.plan.limit) + " records a month"];
+    var arrow = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg>';
+    var bag = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h12l-1 10H5L4 7Z"/><path d="M7.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/></svg>';
+    var tiles = ents.map(function (e) {
+      var n = e.count === null ? P().redirects : e.count;
+      var hint = SUB[e.key] ? subCount(e.key) : e.key === "redirects" ? "old links sent to the new pages" : e.key === "collections" ? "become Shopify collections" : e.key === "orders" ? "with payment and fulfilment status" : "";
+      return '<div class="rv-item"><span class="rv-item__icon">' + (ENT_ICON[e.key] || I.migrate) + '</span><span class="rv-item__name">' + e.label + (hint ? "<small>" + hint + "</small>" : "") + '</span><span class="rv-item__count num">' + fmt(n || 0) + '</span>' +
+        '<span class="rv-item__bar" aria-hidden="true"><span style="width:' + Math.max(2, Math.round((e.count || 0) / max * 100)) + '%"></span></span></div>';
+    }).join("");
+    return '<div class="card__sec"><h2 style="font-size:16px">Review and run</h2><p class="muted">Check the summary, then run the free demo or begin the full migration.</p></div>' +
+      '<div class="rv-route"><div class="rv-node"><i style="background:' + P().color + '">' + P().abbr + '</i><span><strong>' + P().name + '</strong><small>' + src() + '</small><small class="rv-ok">' + I.check + P().version + ' · connected</small></span></div>' +
+        '<div class="welcome__path" aria-hidden="true"><span></span><span></span><span></span>' + arrow + '</div>' +
+        '<div class="rv-node rv-node--to"><i class="rv-node__shop">' + bag + '</i><span><strong>Shopify</strong><small>' + SHOP + '</small><small>receives everything below</small></span></div></div>' +
+      '<div class="rv-stats">' +
+        '<div class="rv-stat"><span class="rv-stat__label">Records to move</span><span class="rv-stat__value num">' + fmt(total) + '</span><span class="rv-stat__foot">across ' + ents.length + ' data types</span></div>' +
+        '<div class="rv-stat"><span class="rv-stat__label">Plan</span><span class="rv-stat__value">' + plan[0] + plan[1] + '</span><span class="rv-stat__foot">' + plan[2] + '</span></div></div>' +
+      '<div class="rv-head"><span>What moves</span><button class="btn btn--plain btn--sm" type="button" data-act="wiz-back">Change</button></div><div class="rv-data">' + tiles + '</div>' +
+      (!S.demoRun ? '<div class="banner banner--brand rv-demo">' + I.spark + '<div class="banner__body"><strong>Start with the free demo.</strong> It moves 20 of each type (' + fmt(demoTotal()) + ' records) into Shopify so you can check them first. It never counts against your plan.</div></div>' : "");
+  }
+  var SHOW_ADVANCED = false;
+  function wizReview() {
+    var has = function (k) { return S.entities.indexOf(k) !== -1; };
+    var fits = !S.plan ? '<span class="badge">Demo is free</span>' : planFits() ? '<span class="badge badge--success">Fits your ' + S.plan.name + ' plan</span>' : '<span class="badge badge--critical">Over your plan limit</span>';
+    var mapRows = statuses().map(function (s) {
+      return '<tr><td><code>' + s.key + '</code> <span class="muted small num">' + fmt(s.count) + '</span></td><td><select class="select" aria-label="' + s.key + ' payment"><option>' + s.pay + '</option><option>Paid</option><option>Pending</option><option>Refunded</option><option>Voided</option></select></td>' +
+        '<td><select class="select" aria-label="' + s.key + ' fulfilment"><option>' + s.ful + '</option><option>Fulfilled</option><option>Unfulfilled</option></select></td></tr>';
+    }).join("");
+    /* Advanced options are hidden for now; set SHOW_ADVANCED to true to bring the section back. */
+    var advanced = '<details class="adv card__sec" style="padding:0"><summary>Advanced options <span class="row muted small" style="font-weight:500">Defaults suit most stores ' + I.chev + '</span></summary>' +
+      '<div class="opt-grid">' +
+      (has("products") ? '<div class="opt"><span class="opt__label">Product status in Shopify</span><div class="radios"><label><input type="radio" name="ps" checked>Same as old store</label><label><input type="radio" name="ps">All as draft</label></div></div>' +
+      '<div class="opt"><span class="opt__label">If the same product code (SKU) is already in Shopify</span><div class="radios"><label><input type="radio" name="sku" checked>Skip it</label><label><input type="radio" name="sku">Update it</label></div></div>' : "") +
+      (has("posts") ? '<div class="opt"><span class="opt__label">Blog posts</span><div class="radios"><label><input type="radio" name="pv" checked>Same visibility as old site</label><label><input type="radio" name="pv">All hidden</label></div></div>' : "") +
+      (has("customers") ? '<div class="opt"><span class="opt__label">Customers</span><label class="check"><input type="checkbox"><span><span class="check__label">Send account invite emails</span><span class="help">Passwords cannot be moved, so customers set a new one.</span></span></label></div>' : "") +
+      (has("orders") ? '<div class="opt"><span class="opt__label">Orders</span><label class="check"><input type="checkbox" checked><span>Keep original order numbers</span></label><label class="check"><input type="checkbox" checked><span>Do not email customers about imported orders</span></label></div>' : "") +
+      '</div>' +
+      (has("orders") && mapRows ? '<div style="padding:0 16px 16px"><div class="opt__label" style="margin-bottom:6px">How order statuses carry over <span class="muted small" style="font-weight:500">only statuses found in your store</span></div>' +
+      '<div class="table-wrap card" style="box-shadow:inset 0 0 0 1px var(--line)"><table><thead><tr><th>' + P().name + '</th><th>Payment</th><th>Fulfilment</th></tr></thead><tbody>' + mapRows + '</tbody></table></div></div>' : "") + '</details>';
+    return reviewSummary() + (SHOW_ADVANCED ? advanced : "");
+  }
+
+  /* ============ PROGRESS ============ */
+  function runPercent() {
+    if (!S.run) return 0;
+    var t = 0, d = 0; S.run.rows.forEach(function (r) { t += r.total; d += r.done; });
+    return t ? Math.floor(d / t * 100) : 100;
+  }
+  /* Step 4 of the wizard: live progress, then the result with what to do next. */
+  function progressBody(r) {
+    if (!r) return '<div class="empty"><div class="empty__art">' + I.migrate + '</div><h2>Nothing is running</h2><p class="muted">Start a demo or a full migration from Connector.</p><button class="btn btn--primary" type="button" data-go="home">Go to Home</button></div>';
+    var t = 0, d = 0; r.rows.forEach(function (x) { t += x.total; d += x.done; });
+    var p = t ? Math.floor(d / t * 100) : 100, fin = r.finished;
+    var firstOpen = r.rows.findIndex(function (x) { return x.done < x.total; });
+    var list = r.rows.map(function (x, i) {
+      var st = x.done >= x.total ? "done" : i === firstOpen ? "active" : "wait";
+      return '<div class="ent ent--' + st + '"><span class="ent__icon">' + (st === "done" ? I.check : st === "active" ? '<span class="dot"></span>' : "") + '</span>' +
+        '<span class="ent__name">' + x.label + '</span><span class="ent__count">' + (st === "wait" ? "Waiting" : fmt(x.done) + " / " + fmt(x.total)) + '</span>' +
+        (st === "active" ? '<div class="progress progress--thin"><span style="width:' + Math.floor(x.done / x.total * 100) + '%"></span></div>' : "") + '</div>';
+    }).join("");
+    var left = r.type === "full" ? eta(r.rows.reduce(function (s, x) { return s + x.total - x.done; }, 0)) : "under a minute";
+    var head = fin
+      ? '<div class="card__sec"><div class="banner banner--success">' + I.checkLg + '<div class="banner__body"><strong>' + (r.type === "demo" ? "Demo finished." : "Full migration finished.") + '</strong> ' +
+        fmt(r.rows.reduce(function (s, x) { return s + (x.label === "Old page links" ? 0 : x.total); }, 0)) + ' records were created in ' + SHOP + '.' + (r.type === "demo" ? " Open a few in Shopify and check they look right." : "") + '</div></div></div>'
+      : '<div class="card__sec"><div class="row row--between"><strong class="num" style="font-size:22px;color:var(--strong)">' + p + '%</strong><span class="muted">' + (S.paused ? "Paused" : left + " left") + '</span></div>' +
+        '<div class="progress" style="margin-top:8px"><span style="width:' + p + '%"></span></div></div>';
+    var foot = fin
+      ? (r.type === "demo"
+        ? '<div class="footer-bar"><button class="btn btn--plain btn--plain-critical" type="button" data-act="delete-demo">Delete demo data</button><div class="row"><button class="btn" type="button" data-go="home">Back to Connector</button><button class="btn btn--primary" type="button" data-go="demo">Check the demo</button></div></div>'
+        : '<div class="footer-bar"><span></span><div class="row"><button class="btn" type="button" data-go="home">Back to Connector</button><button class="btn btn--primary" type="button" data-go="results">View results</button></div></div>')
+      : '<div class="footer-bar"><label class="check"><input type="checkbox" id="f-notify" data-act="notify"' + (S.notify ? " checked" : "") + '><span>Email me when it finishes</span></label><div class="row">' +
+        '<button class="btn" type="button" data-act="pause">' + (S.paused ? "Resume" : "Pause") + '</button><button class="btn btn--plain btn--plain-critical" type="button" data-act="cancel">Cancel</button></div></div>';
+    return head + '<div class="card__sec" style="padding:0">' + list + '</div>' + foot;
+  }
+
+  /* ============ DEMO REVIEW ============ */
+  function pageDemo() {
+    var tabs = [["products", "Products"], ["customers", "Customers"], ["orders", "Orders"]];
+    var rows = DEMO_ROWS[S.demoTab];
+    var head = S.demoTab === "products" ? "<th>Product</th><th>Status</th><th>Old ID</th>" : S.demoTab === "customers" ? "<th>Customer</th><th>Email</th><th>Old ID</th>" : "<th>Order</th><th>Status</th><th class=\"num\">Total</th>";
+    var body = rows.map(function (r) {
+      return '<tr><td><strong style="color:var(--strong);font-weight:600">' + r[0] + '</strong></td><td>' + (S.demoTab === "products" ? (r[1] === "Active" ? '<span class="badge badge--success">Active</span>' : '<span class="badge">Draft</span>') : r[1]) + '</td><td class="' + (S.demoTab === "orders" ? "num" : "muted") + '">' + r[2] + '</td>' +
+        '<td style="text-align:right"><button class="btn btn--sm" type="button" data-act="admin-link" data-label="this record">Open in Shopify' + I.ext + '</button></td></tr>';
+    }).join("");
+    var checked = S.stage > 2;
+    return '<div class="page">' + header("Check your demo " + badge("demo"), fmt(demoTotal()) + " records were created in " + SHOP + ". Open a few and compare them with your old store.", "", ["home", "Connector"]) +
+      '<div class="banner banner--brand">' + I.info + '<div class="banner__body"><strong>What to look at:</strong> product prices and variants, images, customer addresses, and order totals including tax and shipping.</div></div>' +
+      '<section class="card"><div class="card__sec row" role="tablist">' + tabs.map(function (t) {
+        return '<button class="btn btn--sm' + (S.demoTab === t[0] ? " btn--primary" : "") + '" type="button" role="tab" aria-selected="' + (S.demoTab === t[0]) + '" data-tab="' + t[0] + '">' + t[1] + ' <span class="num">20</span></button>';
+      }).join("") + '<span class="muted small" style="margin-left:auto">Showing 5 of 20</span></div>' +
+      '<div class="table-wrap"><table><thead><tr>' + head + '<th></th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      '<div class="footer-bar"><button class="btn btn--plain btn--plain-critical" type="button" data-act="delete-demo">Delete demo data</button><div class="row">' +
+      '<button class="btn" type="button" data-act="admin-link" data-label="Products">View all in Shopify' + I.ext + '</button>' +
+      (checked ? '<span class="badge badge--success">Checked</span>' : '<button class="btn btn--primary" type="button" data-act="demo-ok">Looks good, continue</button>') + '</div></div></section></div>';
+  }
+
+  /* ============ RESULTS ============ */
+  function pageResults() {
+    var full = S.history.filter(function (h) { return h.type === "full"; }).pop();
+    if (!full) return '<div class="page">' + header("Results", "") + '<section class="card"><div class="empty"><div class="empty__art">' + I.migrate + '</div><h2>No full migration yet</h2><p class="muted">Results appear here after the full migration finishes.</p></div></section></div>';
+    var left = issueCount();
+    var fixedRecords = ISSUES.filter(function (i) { return S.fixed.indexOf(i.id) !== -1; }).reduce(function (s, i) { return s + i.count; }, 0);
+    var migrated = full.records - 37 + fixedRecords;
+    var issuesHtml = ISSUES.map(function (i) {
+      var fixed = S.fixed.indexOf(i.id) !== -1;
+      return '<div class="issue' + (fixed ? " issue--fixed" : "") + '"><span class="issue__bar"></span><div><div class="row row--between"><h3>' + i.title + '</h3>' + (fixed ? '<span class="badge badge--success">Fixed</span>' : '<span class="badge">' + i.entity + '</span>') + '</div>' +
+        '<p class="issue__why">' + i.why + '</p>' +
+        (fixed ? "" : '<div class="issue__fix"><span><strong>Fix:</strong> ' + i.fix + '</span></div><div class="row" style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-fix="' + i.id + '">' + i.action + '</button><button class="btn btn--plain btn--sm" type="button" data-act="toast" data-msg="Opens the list of ' + i.count + ' affected records">See the ' + i.count + ' records</button></div>') +
+        '</div></div>';
+    }).join("");
+    var byType = ENT.filter(function (e) { return S.entities.indexOf(e.key) !== -1; }).map(function (e) {
+      var fails = ISSUES.filter(function (i) { return i.entity === e.key && S.fixed.indexOf(i.id) === -1 && i.id !== "img"; }).reduce(function (s, i) { return s + i.count; }, 0);
+      var total = e.count === null ? P().redirects : e.count;
+      return '<tr><td>' + e.label + '</td><td class="num">' + fmt(total - fails) + '</td><td class="num">' + (fails ? '<span style="color:var(--critical);font-weight:600">' + fails + '</span>' : "0") + '</td></tr>';
+    }).join("");
+
+    return '<div class="page">' + header("Full migration #" + full.id + " " + badge(left ? "issues" : "done"), "Finished " + full.date + " · took 41 min", '<button class="btn" type="button" data-act="toast" data-msg="Downloads errors.csv">Download error list (CSV)</button>', ["home", "Connector"]) +
+      '<section class="card"><div class="card__sec"><p class="summary-line">We moved ' + fmt(migrated) + ' of ' + fmt(full.records) + ' items.' + (left ? ' ' + fmt(left) + ' need a quick fix below.' : ' Everything is in Shopify.') + '</p>' +
+      '<p class="muted">' + (left ? "Each problem explains what went wrong and has a button that fixes it." : "Next, sync any orders and customers that arrived in your old store since the move.") + '</p></div></section>' +
+      '<section class="grid4"><div class="card stat"><span class="stat__label">Migrated</span><span class="stat__value stat__value--success">' + fmt(migrated) + '</span></div>' +
+      '<div class="card stat"><span class="stat__label">Need attention</span><span class="stat__value' + (left ? " stat__value--critical" : "") + '">' + fmt(left) + '</span></div>' +
+      '<div class="card stat"><span class="stat__label">Redirects created</span><span class="stat__value">' + fmt(P().redirects) + '</span></div>' +
+      '<div class="card stat"><span class="stat__label">Time taken</span><span class="stat__value">41 min</span></div></section>' +
+      (left ? "" : '<div class="banner banner--success">' + I.checkLg + '<div class="banner__body"><strong>All issues are fixed.</strong> Next, sync any changes made in your old store since the migration.</div><button class="btn btn--primary btn--sm" type="button" data-act="to-sync">Continue to final sync</button></div>') +
+      '<section class="card"><div class="card__sec row row--between"><h2 class="card__title">Needs attention</h2>' + (left ? '<button class="btn btn--plain btn--sm" type="button" data-act="to-sync">Skip the rest and continue</button>' : "") + '</div>' + issuesHtml + '</section>' +
+      '<section class="card"><div class="card__sec"><h2 class="card__title">By data type</h2></div><div class="table-wrap"><table><thead><tr><th>Type</th><th class="num">Migrated</th><th class="num">Not migrated</th></tr></thead><tbody>' + byType + '</tbody></table></div></section></div>';
+  }
+
+  /* ============ OTHER PAGES ============ */
+  function pageSettings() {
+    return '<div class="page page--narrow">' + header("Settings", "") +
+      '<section class="card"><div class="card__sec"><h2 class="card__title">Old store connection</h2><p class="muted small">Read-only. Keys are encrypted and never shown again.</p></div><div class="card__sec row row--between">' +
+      (S.connected ? '<div><strong style="color:var(--strong)">' + src() + '</strong> <span class="badge badge--success">Connected</span><span class="t2">' + P().version + ' · key ending …d5a8</span></div><div class="row"><button class="btn btn--sm" type="button" data-act="toast" data-msg="Connection works">Test</button><button class="btn btn--sm btn--plain btn--plain-critical" type="button" data-act="disconnect">Disconnect</button></div>'
+        : '<span class="muted">No store connected.</span><button class="btn btn--sm btn--primary" type="button" data-act="new">Connect store</button>') + '</div>' +
+      S.projects.map(function (p) {
+        return '<div class="card__sec row row--between"><div><strong style="color:var(--strong)">' + p.host + '</strong> <span class="badge">Disconnected</span><span class="t2">' + p.name + ' · keys deleted after the move</span></div></div>';
+      }).join("") + '</section>' +
+      '<section class="card"><div class="card__sec"><h2 class="card__title">Notifications</h2></div><div class="card__sec" style="display:flex;flex-direction:column;gap:12px">' +
+      '<label class="check"><input type="checkbox" id="s-n1" checked><span>Email me when a migration finishes or stops</span></label>' +
+      '<label class="check"><input type="checkbox" id="s-n2" checked><span>Email me a when the migrations are failed </span></label>' +
+      '<div class="field"><label for="s-email">Send to</label><input class="input" id="s-email" type="email" value="pawan@stelleninfotech.co.uk"></div></div></section>' +
+      '<section class="card"><div class="card__sec"><h2 class="card__title">Data and privacy</h2><p class="muted small">Migration files hold customer details, so we delete them automatically.</p></div><div class="card__sec"><div class="field" style="max-width:260px"><label for="s-ret">Delete migration files after</label><select class="select" id="s-ret"><option>7 days</option><option selected>30 days</option><option>90 days</option></select></div></div>' +
+      '<div class="card__sec row row--end"><button class="btn btn--primary" type="button" data-act="toast" data-msg="Settings saved">Save</button></div></section></div>';
+  }
+
+  function pagePlans() {
+    var need = totalRecords();
+    var plans = [
+      { id: "starter", name: "Starter", price: 29, limit: 2500, feats: ["2,500 records a month", "Products, customers, orders", "Email support"] },
+      { id: "growth", name: "Growth", price: 79, limit: 25000, feats: ["25,000 records a month", "Everything in Starter", "Blog posts and old page links", "Final sync of new orders and customers"] },
+      { id: "pro", name: "Pro", price: 199, limit: null, feats: ["Unlimited records", "Everything in Growth", "Priority support", "A personal onboarding call"] }
+    ];
+    return '<div class="page">' + header("Plans", "Your store has <strong>" + fmt(need) + " records</strong>. Demos are always free. Billing goes through Shopify.") +
+      '<section class="plans">' + plans.map(function (p) {
+        var rec = p.id === "growth"; var cur = S.plan && S.plan.id === p.id; var small = p.limit !== null && p.limit < need;
+        return '<div class="card plan' + (rec ? " plan--rec" : "") + '"><div class="row row--between"><h2 style="font-size:16px">' + p.name + '</h2>' + (cur ? '<span class="badge badge--success">Current</span>' : rec ? '<span class="badge badge--brand">Fits your store</span>' : small ? '<span class="badge">Too small</span>' : "") + '</div>' +
+          '<div class="plan__price">£' + p.price + ' <small>/ month</small></div><ul>' + p.feats.map(function (f) { return "<li>" + f + "</li>"; }).join("") + '</ul>' +
+          '<button class="btn' + (rec && !cur ? " btn--primary" : "") + '" type="button" data-plan="' + p.id + '"' + (cur || small ? " disabled" : "") + '>' + (cur ? "Current plan" : small ? "Not enough records" : "Choose " + p.name) + '</button></div>';
+      }).join("") + '</section></div>';
+  }
+
+  /* ============ HELP CENTRE ============ */
+  /* Filters live outside S, so resetting the prototype does not wipe them. */
+  var HELP = { cat: "all", plat: "woocommerce" };
+  var HCAT = { connect: "Connecting", demo: "Free demo", migrate: "Migration", billing: "Plans and billing" };
+  var FAQ = [
+    { c: "connect", q: "How do I create WooCommerce API keys?", a: "In WordPress, go to WooCommerce → Settings → Advanced → REST API → Add key. Give it a name, choose Read access, and copy the consumer key and secret into the app.", t: "woocommerce rest consumer key secret" },
+    { c: "connect", q: "Which platforms can I move from?", a: "WooCommerce, Magento and WordPress today. Each needs read-only access to your old store, which takes about two minutes to set up. Tell us if you need another platform.", t: "magento wordpress shopify platform" },
+    { c: "connect", q: "Does the migration change my old store?", a: "No. The app only reads from it. Your old store keeps taking orders until you connect your domain to Shopify.", t: "safe delete read only" },
+    { c: "demo", q: "What does the free demo include?", a: "Up to 20 of each record type you selected, created in your Shopify store exactly as the full migration would create them. It costs nothing and does not count towards a plan.", t: "trial sample free" },
+    { c: "demo", q: "How do I remove the demo records?", a: "Open Migrations, choose the demo run and click Delete demo data. Only records the demo created are removed. Anything you added yourself is left alone.", t: "delete undo remove clean" },
+    { c: "migrate", q: "Why can't customer passwords be moved?", a: "WooCommerce stores passwords in a form Shopify cannot read. You can send customers an invite email so they set a new one.", t: "login invite email account" },
+    { c: "migrate", q: "What is the final sync?", a: "After the full migration, orders and customers keep arriving in your old store. The final sync copies those changes across just before you switch your domain.", t: "delta cutover domain switch" },
+    { c: "migrate", q: "Can I pause a migration once it has started?", a: "Yes. Press Pause on the progress page and nothing new is created until you resume. Everything already moved stays in Shopify.", t: "stop resume cancel" },
+    { c: "migrate", q: "How long does a full migration take?", a: "Roughly 340 records a minute. A store with 15,000 records takes " + eta(15000) + ". It runs in the background and we email you when it finishes.", t: "speed time duration eta" },
+    { c: "billing", q: "How does billing work?", a: "You approve a plan inside Shopify and the charge appears on your normal Shopify invoice. There is no separate card or account to set up.", t: "invoice pay charge price" },
+    { c: "billing", q: "What happens if my store is bigger than my plan?", a: "The migration pauses when you reach the plan limit and you can upgrade in one click. Nothing already moved is lost, and the run continues where it stopped.", t: "limit upgrade over quota" },
+    { c: "billing", q: "Can I cancel or change plans?", a: "Yes, at any time from the Plans page. Plans are monthly and billed through Shopify, so cancelling ends the charge at the end of the period.", t: "cancel refund downgrade" }
+  ];
+  var HI = {
+    mail: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 6 7 5 7-5"/></svg>',
+    chat: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4.5h14v9H8l-4 3v-3H3v-9Z"/><path d="M6.5 9h7"/></svg>',
+    cal: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2.5v3M13 2.5v3"/></svg>',
+    plug: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 2v4M13 2v4M5 6h10v3a5 5 0 0 1-10 0V6ZM10 14v4"/></svg>',
+    spark: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M4.5 4.5l2.5 2.5M13 13l2.5 2.5M4.5 15.5 7 13M13 7l2.5-2.5"/></svg>',
+    migrate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7h10M10 4l3 3-3 3M17 13H7M10 10l-3 3 3 3"/></svg>',
+    card: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M2.5 8.5h15M6 12.5h3"/></svg>',
+    arrow: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5"/></svg>',
+    clock: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 1.5"/></svg>',
+    thumb: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 9h3v8h-3zM5.5 9l4-6.5a2 2 0 0 1 2 2V8h4.2a1.5 1.5 0 0 1 1.5 1.8l-1.2 5.7A1.5 1.5 0 0 1 14.5 17H5.5"/></svg>'
+  };
+  function hpMatches() { return FAQ.filter(function (f) { return HELP.cat === "all" || f.c === HELP.cat; }); }
+  function hpCount() {
+    var n = hpMatches().length;
+    return HELP.cat !== "all" ? n + " of " + FAQ.length + " answers" : FAQ.length + " answers";
+  }
+  function hpCats() {
+    var all = [["all", "All"]].concat(Object.keys(HCAT).map(function (k) { return [k, HCAT[k]]; }));
+    return all.map(function (c) {
+      var n = c[0] === "all" ? FAQ.length : FAQ.filter(function (f) { return f.c === c[0]; }).length;
+      return '<button class="hp-cat" type="button" data-act="help-cat" data-cat="' + c[0] + '" aria-pressed="' + (HELP.cat === c[0]) + '">' + c[1] + '<i>' + n + '</i></button>';
+    }).join("");
+  }
+  function hpList() {
+    return hpMatches().map(function (f, i) {
+      return '<details class="hp-q"' + (i === 0 ? " open" : "") + '><summary><span class="hp-q__n">' + (i + 1) + '</span><span>' + f.q + '</span>' + I.chev + '</summary>' +
+        '<div class="hp-q__body"><p>' + f.a + '</p>' +
+        '<div class="hp-q__foot"><span class="badge">' + HCAT[f.c] + '</span><span class="hp-vote">Was this helpful?' +
+        '<button type="button" data-act="toast" data-msg="Thanks, glad it helped" aria-label="Yes, helpful">' + HI.thumb + '</button>' +
+        '<button type="button" data-act="toast" data-msg="Thanks. We will improve this answer" aria-label="No, not helpful" style="transform:rotate(180deg)">' + HI.thumb + '</button></span></div></div></details>';
+    }).join("");
+  }
+  /* redraws only the list and filters, so the page does not jump */
+  function refreshHelp() {
+    var list = document.getElementById("hp-list");
+    if (!list) return;
+    list.innerHTML = hpList();
+    document.getElementById("hp-count").textContent = hpCount();
+    document.getElementById("hp-cats").innerHTML = hpCats();
+    document.querySelectorAll(".hp-topic").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.cat === HELP.cat)); });
+  }
+  function pageHelp() {
+    var topics = [
+      ["connect", "Connecting a store", "API keys, read-only access, supported platforms", HI.plug, ""],
+      ["demo", "Free demo", "What the 20-record demo creates and how to undo it", HI.spark, " hp-topic__icon--ok"],
+      ["migrate", "Full migration", "Passwords, pausing, final sync, how long it takes", HI.migrate, " hp-topic__icon--info"],
+      ["billing", "Plans and billing", "Shopify invoices, limits, changing plans", HI.card, " hp-topic__icon--warn"]
+    ];
+    var plat = PLAT[HELP.plat];
+    var contact = '<a class="btn btn--primary" href="mailto:support@example.com">' + HI.mail + 'Contact support</a>';
+    return '<div class="page page--narrow">' + header("Help and support", "Pick a topic or open a question below. A real person is one click away.", contact) +
+      /* topic cards */
+      '<section class="hp-topics" aria-label="Help topics">' + topics.map(function (t) {
+        var n = FAQ.filter(function (f) { return f.c === t[0]; }).length;
+        return '<button class="hp-topic" type="button" data-act="help-topic" data-cat="' + t[0] + '" aria-pressed="' + (HELP.cat === t[0]) + '"><span class="hp-topic__icon' + t[4] + '">' + t[3] + '</span><span><strong>' + t[1] + '</strong><small>' + t[2] + '</small></span><span class="hp-topic__foot"><span>' + n + ' answers</span>' + HI.arrow + '</span></button>';
+      }).join("") + '</section>' +
+      '<div class="hp-grid">' +
+        /* questions */
+        '<section class="card hp-faq" id="hp-faq"><div class="card__head"><div><h2 class="card__title">Common questions</h2><p>Click a question to open it.</p></div><span class="hp-count" id="hp-count" aria-live="polite">' + hpCount() + '</span></div>' +
+          '<div class="hp-cats" id="hp-cats" role="group" aria-label="Filter by topic">' + hpCats() + '</div><div id="hp-list">' + hpList() + '</div></section>' +
+        '<div class="stack">' +
+          /* API-key guide, one platform at a time */
+          '<section class="card"><div class="hp-guide__head"><div><h2 class="card__title">' + (HELP.plat === "wordpress" ? "Connect WordPress" : "Create " + plat.name + " API keys") + '</h2><p class="muted small">Read-only. ' + (HELP.plat === "wordpress" ? "Keys are optional." : "Takes about two minutes.") + '</p></div>' +
+            '<div class="seg" role="group" aria-label="Platform">' + ["woocommerce", "magento", "wordpress"].map(function (k) { return '<button type="button" data-act="help-plat" data-plat="' + k + '" aria-pressed="' + (HELP.plat === k) + '">' + PLAT[k].abbr + '</button>'; }).join("") + '</div></div>' +
+            '<ol class="hp-steps">' + plat.howto.map(function (s) { return "<li><span>" + s + "</span></li>"; }).join("") + '</ol>' +
+            '<div class="footer-bar"><span class="muted small hp-lock">' + I.lock + 'We never ask for write access</span><button class="btn" type="button" data-go="home">Open connector' + HI.arrow + '</button></div></section>' +
+          /* contact */
+          '<section class="card"><div class="hp-team"><div class="hp-avatars"><span style="background:#0b5368">AM</span><span style="background:#3d8a5f">JP</span><span style="background:#7f54b3">RK</span></div><div><strong>Talk to a person</strong><small>Migration specialists, Monday to Friday, 9 am to 6 pm UK</small></div></div>' +
+            '<a class="hp-chan" href="mailto:support@example.com"><span class="hp-chan__icon">' + HI.mail + '</span><span><strong>Email support@example.com</strong><small>Reply within one working day</small></span>' + I.chev + '</a>' +
+            '<button class="hp-chan" type="button" data-act="toast" data-msg="In the app this opens live chat"><span class="hp-chan__icon">' + HI.chat + '</span><span><strong>Start a live chat</strong><small>Usually answered in under five minutes</small></span>' + I.chev + '</button>' +
+            '<button class="hp-chan" type="button" data-act="toast" data-msg="In the app this opens the booking calendar"><span class="hp-chan__icon">' + HI.cal + '</span><span><strong>Book a 15-minute call</strong><small>Free. We screen-share your migration with you</small></span>' + I.chev + '</button>' +
+            '<div class="hp-status"><span class="ok"><span class="dot"></span>All systems normal</span><span class="hp-lock">' + HI.clock + 'Checked 2 min ago</span></div></section>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  /* ============ DASHBOARD ============ */
+  /* Example activity for two stores over 91 days, so the charts have something real-looking to show. */
+  var DAY = 864e5, DASH_DAYS = 91;
+  var TYPES = [["products", "Products", "--s1"], ["customers", "Customers", "--s2"], ["orders", "Orders", "--s3"], ["other", "Categories and posts", "--s4"]];
+  var DSTORES = { oak: { host: "oakandreed.co.uk", name: "WooCommerce" }, bright: { host: "brightlane-store.com", name: "Magento" } };
+  var DASH = (function () {
+    var days = [];
+    var blank = function () { return { products: 0, customers: 0, orders: 0, other: 0, failed: 0, fixed: 0 }; };
+    for (var i = 0; i < DASH_DAYS; i++) days.push({ oak: blank(), bright: blank() });
+    var mixes = { oak: [1248 / 14174, 3912 / 14174, 8904 / 14174], bright: [3420 / 34792, 9810 / 34792, 21450 / 34792], sync: [0.06, 0.26, 0.68], rerun: [0.86, 0.09, 0.05] };
+    var events = [
+      { s: "oak", ago: 64, kind: "demo", n: 120 }, { s: "oak", ago: 60, kind: "full", n: 8100, part: 1 }, { s: "oak", ago: 59, kind: "full", n: 6074, failed: 37, fixed: 37 },
+      { s: "oak", ago: 52, kind: "sync", n: 169 }, { s: "oak", ago: 30, kind: "rerun", n: 420 },
+      { s: "bright", ago: 24, kind: "demo", n: 120 }, { s: "bright", ago: 20, kind: "full", n: 18000, part: 1 }, { s: "bright", ago: 19, kind: "full", n: 16792, failed: 41, fixed: 4 },
+      { s: "bright", ago: 12, kind: "sync", n: 310 }, { s: "bright", ago: 5, kind: "sync", n: 262 }, { s: "bright", ago: 1, kind: "sync", n: 144, failed: 2 }
+    ];
+    events.forEach(function (e) {
+      var d = days[DASH_DAYS - 1 - e.ago][e.s];
+      var mix = e.kind === "sync" ? mixes.sync : e.kind === "rerun" ? mixes.rerun : mixes[e.s];
+      var used = 0;
+      ["products", "customers", "orders"].forEach(function (k, i) { var v = Math.floor(e.n * mix[i]); d[k] += v; used += v; });
+      d.other += e.n - used; d.failed += e.failed || 0; d.fixed += e.fixed || 0;
+    });
+    return { days: days, events: events };
+  })();
+
+  function dayLabel(ago) { var d = new Date(Date.now() - ago * DAY); return d.getDate() + " " + d.toLocaleString("en-GB", { month: "short" }); }
+  function compact(n) { return n >= 10000 ? Math.round(n / 1000) + "K" : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K" : String(Math.round(n)); }
+  /* axis top = 4 round steps, so every gridline lands on a clean number */
+  function niceMax(v) { if (v <= 0) return 4; var s = v / 4, p = Math.pow(10, Math.floor(Math.log10(s))), f = s / p, step = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].filter(function (k) { return k >= f - 1e-9; })[0]; return step * p * 4; }
+
+  /* Sums the chosen stores over days [fromAgo .. toAgo] (inclusive, toAgo is the more recent). */
+  function sumDays(fromAgo, toAgo) {
+    var t = { products: 0, customers: 0, orders: 0, other: 0, failed: 0, fixed: 0 };
+    for (var ago = fromAgo; ago >= toAgo; ago--) {
+      if (ago < 0 || ago >= DASH_DAYS) continue;
+      var day = DASH.days[DASH_DAYS - 1 - ago];
+      ["oak", "bright"].forEach(function (s) {
+        if (S.dash.store !== "all" && S.dash.store !== s) return;
+        Object.keys(t).forEach(function (k) { t[k] += day[s][k]; });
+      });
+    }
+    t.moved = t.products + t.customers + t.orders + t.other;
+    return t;
+  }
+  function buckets() {
+    var R = S.dash.range, out = [];
+    if (R <= 30) { for (var a = R - 1; a >= 0; a--) out.push({ label: dayLabel(a), sub: "", to: a, v: sumDays(a, a) }); }
+    else { for (var w = 12; w >= 0; w--) out.push({ label: dayLabel(w * 7 + 6), sub: "Week of ", to: w * 7, v: sumDays(w * 7 + 6, w * 7) }); }
+    return out;
+  }
+
+  function pageDashboard() {
+    var R = S.dash.range, cur = sumDays(R - 1, 0), prev = R < 90 ? sumDays(2 * R - 1, R) : null;
+    var open = (S.dash.store !== "oak" && R >= 20) ? 37 : 0;
+    var rate = cur.moved + cur.failed ? cur.moved / (cur.moved + cur.failed) * 100 : 100;
+    var delta = function (now, before) {
+      if (!prev || !before) return '<span class="kpi__delta">No earlier data</span>';
+      var pct = Math.round((now - before) / before * 100);
+      return '<span class="kpi__delta ' + (pct >= 0 ? "kpi__delta--up" : "kpi__delta--down") + '">' + (pct >= 0 ? "▲ " : "▼ ") + Math.abs(pct) + '% vs prior ' + R + ' days</span>';
+    };
+    var storeOpts = [["all", "All stores"], ["oak", "oakandreed.co.uk"], ["bright", "brightlane-store.com"]].map(function (o) {
+      return '<option value="' + o[0] + '"' + (S.dash.store === o[0] ? " selected" : "") + '>' + o[1] + '</option>';
+    }).join("");
+    var seg = [[7, "7 days"], [30, "30 days"], [90, "90 days"]].map(function (r) {
+      return '<button type="button" data-range="' + r[0] + '" aria-pressed="' + (R === r[0]) + '">' + r[1] + '</button>';
+    }).join("");
+
+
+    return '<div class="page">' +
+      '<div class="page-header"><div><h1>Dashboard</h1><p class="page-header__sub">Everything moved into ' + SHOP + '. Example data in this prototype.</p></div><div class="row">' + planPill() + '</div></div>' +
+      // '<div class="dash-filters"><div class="seg" role="group" aria-label="Date range">' + seg + '</div><select class="select" id="dash-store" aria-label="Store">' + storeOpts + '</select></div></div>' +
+
+      '<section class="grid4" aria-label="Key figures">' +
+      '<div class="card kpi kpi--hero"><span class="kpi__label">Records moved</span><span class="kpi__value num">' + fmt(cur.moved) + '</span><div class="kpi__foot">' + delta(cur.moved, prev && prev.moved) + '<span class="kpi__spark" id="sp-moved"></span></div></div>' +
+      '<div class="card kpi"><span class="kpi__label">Success rate</span><span class="kpi__value num">' + (cur.moved ? rate.toFixed(2) + "%" : "—") + '</span><div class="kpi__foot"><span class="kpi__delta">' + fmt(cur.failed) + ' records did not move</span></div></div>' +
+      '<div class="card kpi"><span class="kpi__label">Needs attention</span><span class="kpi__value num' + (open ? '" style="color:var(--critical)' : "") + '">' + open + '</span><div class="kpi__foot">' +
+        (open ? '<button class="link" type="button" data-go="results">Fix issues</button>' : '<span class="kpi__delta kpi__delta--up">All clear</span>') + '</div></div>' +
+      '<div class="card kpi"><span class="kpi__label">Average speed</span><span class="kpi__value num">349<small style="font-size:14px;color:var(--muted);font-weight:600"> /min</small></span><div class="kpi__foot"><span class="kpi__delta">records during full migrations</span></div></div>' +
+      '</section>' +
+
+      '<div class="dgrid">' +
+      '<section class="card chart-card" id="dash-chart">' + dashChartCard() + '</section>' +
+      '<section class="card"><div class="card__head"><div><h2 class="card__title">By data type</h2><p>' + fmt(cur.moved) + ' records in total</p></div></div><div class="hbars" id="ch-types"></div>' +
+        '<div class="card__head" style="padding-top:0"><h2 class="card__title">By store</h2></div><div class="hbars" id="ch-stores"></div></section>' +
+      '</div>' +
+
+      '<div class="dgrid dgrid--even">' +
+      '<section class="card"><div class="card__head"><div><h2 class="card__title">Health</h2><p>What happened to every record in this period</p></div></div><div id="ch-health"></div>' +
+        '<div class="card__head" style="padding-top:4px"><h2 class="card__title">Open issues by cause</h2></div><div class="hbars" id="ch-issues"></div></section>' +
+      '<section class="card"><div class="card__head"><div><h2 class="card__title">Recent activity</h2><p>Last ' + R + ' days</p></div></div><ul class="feed" id="feed"></ul></section>' +
+      '</div>' +
+      '</div>';
+  }
+
+  /* ---- tooltip ---- */
+  function tip(html, ev) {
+    var t = document.getElementById("vtip");
+    if (!html) { t.classList.remove("show"); return; }
+    t.innerHTML = html; t.classList.add("show");
+    var x = ev.clientX + 14, y = ev.clientY + 14, w = t.offsetWidth, h = t.offsetHeight;
+    if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+    if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
+    t.style.left = x + "px"; t.style.top = y + "px";
+  }
+
+  /* ---- the "records over time" card: its own markup + drawing, so switching views only touches this card ---- */
+  function dashChartCard() {
+    var R = S.dash.range, v = S.dash.view, per = R > 30 ? "week" : "day";
+    var title = v === "total" ? "Records in Shopify" : "Records moved over time";
+    var sub = (v === "total" ? "Running total" : "Per " + per) + ", by type. Hover for details.";
+    return '<div class="chart-card__head"><div><h2 class="card__title">' + title + '</h2><p>' + sub + '</p></div>' +
+      '<div class="seg" role="group" aria-label="View">' + [["total", "Running total"], ["day", "Per " + per], ["table", "Table"]].map(function (o) {
+        return '<button type="button" data-view="' + o[0] + '" aria-pressed="' + (v === o[0]) + '">' + o[1] + '</button>';
+      }).join("") + '</div></div>' +
+      '<div class="legend">' + TYPES.map(function (t) { return '<span data-series="' + t[0] + '"><i style="background:var(' + t[2] + ')"></i>' + t[1] + '</span>'; }).join("") + '</div>' +
+      '<div class="chart-body"><div class="chart-view">' +
+        (v === "table" ? '<div class="chart-main dash-table" id="tb-stack"></div>' : '<div class="chart-main chart" id="' + (v === "day" ? "ch-stack" : "ch-area") + '"></div>') +
+        '<div class="chart-foot" id="ch-foot"></div></div></div>';
+  }
+  function swapDashView() {
+    var card = document.getElementById("dash-chart");
+    if (!card) return render();
+    tip(null); card.innerHTML = dashChartCard(); drawStackChart();
+  }
+  /* tooltip body: one row per series (value leads), then the total */
+  function tipBody(title, types, get, extra) {
+    return '<div style="font-weight:650;margin-bottom:4px">' + title + '</div>' + types.map(function (t) {
+      return '<div class="row"><span><i style="background:var(' + t[2] + ')"></i>' + t[1] + '</span><b>' + fmt(get(t[0])) + '</b></div>';
+    }).join("") + '<div class="row" style="margin-top:4px;border-top:1px solid rgba(127,127,127,.35);padding-top:4px"><span>Total</span><b>' + fmt(get("moved")) + '</b></div>' + (extra || "");
+  }
+
+  function drawStackChart() {
+    var card = document.getElementById("dash-chart");
+    if (!card) return;
+    var bs = buckets(), R = S.dash.range, per = R > 30 ? "week" : "day", n = bs.length - 1;
+    var sumB = function (k) { return bs.reduce(function (s, b) { return s + b.v[k]; }, 0); };
+    var peak = bs.reduce(function (p, b) { return b.v.moved > p.v.moved ? b : p; }, bs[0]);
+    var H = 240, m = { l: 44, r: 12, t: 14, b: 26 }, ph = H - m.t - m.b;
+    var gridlines = function (W, y, max) {
+      var out = "";
+      for (var g = 0; g <= 4; g++) { var gv = max / 4 * g, gy = y(gv); out += '<line class="axis-line" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + gy + '" y2="' + gy + '"/><text x="' + (m.l - 8) + '" y="' + (gy + 4) + '" text-anchor="end">' + compact(gv) + '</text>'; }
+      return out;
+    };
+    var baseline = function (W) { return '<line class="axis-line baseline" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + (m.t + ph) + '" y2="' + (m.t + ph) + '"/>'; };
+
+    /* per day / per week: stacked columns, the busiest one labelled on its cap */
+    var host = document.getElementById("ch-stack");
+    if (host) {
+      var W = host.clientWidth - 32, pw = W - m.l - m.r;
+      var max = niceMax(peak.v.moved);
+      var band = pw / bs.length, bw = Math.max(4, Math.min(24, band * 0.62)), every = Math.ceil(bs.length / Math.max(1, Math.floor(pw / 58)));
+      var y = function (v) { return m.t + ph - (v / max) * ph; };
+      var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="Records moved over time, stacked by type">' + gridlines(W, y, max);
+      var cap = "";
+      bs.forEach(function (b, i) {
+        var cx = m.l + band * i + band / 2, x0 = cx - bw / 2, base = m.t + ph, segs = TYPES.filter(function (t) { return b.v[t[0]] > 0; });
+        svg += '<g class="col" data-i="' + i + '" style="--i:' + i + '">';
+        segs.forEach(function (t, si) {
+          var hgt = (b.v[t[0]] / max) * ph, top = base - hgt, gap = si > 0 ? 2 : 0, hh = Math.max(0, hgt - gap);
+          if (hh <= 0) { base = top; return; }
+          if (si === segs.length - 1) {
+            var r = Math.min(4, hh, bw / 2), yt = base - gap - hh;
+            svg += '<path data-s="' + t[0] + '" fill="var(' + t[2] + ')" d="M' + x0 + ',' + (base - gap) + 'V' + (yt + r) + 'Q' + x0 + ',' + yt + ' ' + (x0 + r) + ',' + yt + 'H' + (x0 + bw - r) + 'Q' + (x0 + bw) + ',' + yt + ' ' + (x0 + bw) + ',' + (yt + r) + 'V' + (base - gap) + 'Z"/>';
+          } else {
+            svg += '<rect data-s="' + t[0] + '" fill="var(' + t[2] + ')" x="' + x0 + '" y="' + (base - gap - hh) + '" width="' + bw + '" height="' + hh + '"/>';
+          }
+          base = top;
+        });
+        svg += '<rect class="hit" x="' + (m.l + band * i) + '" y="' + m.t + '" width="' + band + '" height="' + ph + '" fill="transparent"/></g>';
+        if (b === peak && b.v.moved > 0) cap = '<text class="cap-label" x="' + cx + '" y="' + (y(b.v.moved) - 7) + '" text-anchor="middle">' + compact(b.v.moved) + '</text>';
+        if ((bs.length - 1 - i) % every === 0) svg += '<text x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + b.label + '</text>';
+      });
+      host.innerHTML = svg + baseline(W) + cap + '</svg>';
+      host.querySelectorAll(".col").forEach(function (gEl) {
+        var b = bs[Number(gEl.dataset.i)];
+        gEl.addEventListener("mousemove", function (ev) {
+          host.querySelectorAll(".col").forEach(function (o) { o.classList.toggle("dim", o !== gEl); });
+          tip(tipBody(b.sub + b.label, TYPES, function (k) { return b.v[k]; }), ev);
+        });
+        gEl.addEventListener("mouseleave", function () { host.querySelectorAll(".col").forEach(function (o) { o.classList.remove("dim"); }); tip(null); });
+      });
+    }
+
+    /* running total: stacked bands (a wash of each colour under a 2px line), revealed left to right */
+    var ah = document.getElementById("ch-area");
+    if (ah) {
+      var cumu = bs.map(function (b) { return sumDays(DASH_DAYS - 1, b.to); });
+      var W2 = ah.clientWidth - 32, pw2 = W2 - m.l - m.r;
+      var max2 = niceMax(Math.max.apply(null, cumu.map(function (c) { return c.moved; })));
+      var ax = function (i) { return m.l + (n > 0 ? i / n : 0.5) * pw2; }, ay = function (v) { return m.t + ph - (v / max2) * ph; };
+      var every2 = Math.ceil(bs.length / Math.max(1, Math.floor(pw2 / 58)));
+      var s2 = '<svg viewBox="0 0 ' + W2 + ' ' + H + '" height="' + H + '" role="img" aria-label="Running total of records in Shopify, stacked by type">' +
+        '<defs><clipPath id="area-clip"><rect class="reveal" x="' + (m.l - 2) + '" y="0" width="' + (pw2 + m.r + 4) + '" height="' + H + '"/></clipPath></defs>' + gridlines(W2, ay, max2);
+      var lower = cumu.map(function () { return 0; }), tops = [];
+      s2 += '<g clip-path="url(#area-clip)">';
+      TYPES.forEach(function (t) {
+        var upper = cumu.map(function (c, i) { return lower[i] + c[t[0]]; });
+        var top = upper.map(function (v, i) { return ax(i).toFixed(1) + "," + ay(v).toFixed(1); });
+        var bottom = lower.map(function (v, i) { return ax(i).toFixed(1) + "," + ay(v).toFixed(1); }).reverse();
+        s2 += '<g data-s="' + t[0] + '"><polygon class="band" fill="var(' + t[2] + ')" points="' + top.concat(bottom).join(" ") + '"/>' +
+          '<polyline class="band-line" stroke="var(' + t[2] + ')" points="' + top.join(" ") + '"/></g>';
+        tops.push(upper); lower = upper;
+      });
+      s2 += '</g>';
+      bs.forEach(function (b, i) { if ((n - i) % every2 === 0) s2 += '<text x="' + ax(i) + '" y="' + (H - 6) + '" text-anchor="' + (i === n ? "end" : "middle") + '">' + b.label + '</text>'; });
+      s2 += baseline(W2) +
+        '<g class="cross" style="display:none"><line y1="' + m.t + '" y2="' + (m.t + ph) + '" stroke="var(--strong)" stroke-opacity=".45" stroke-width="1"/>' +
+        TYPES.map(function (t) { return '<circle r="4" fill="var(' + t[2] + ')" stroke="var(--surface)" stroke-width="2"/>'; }).join("") + '</g>' +
+        '<rect class="hit" x="' + m.l + '" y="' + m.t + '" width="' + pw2 + '" height="' + ph + '" fill="transparent"/></svg>';
+      ah.innerHTML = s2;
+      var aSvg = ah.querySelector("svg"), aCross = ah.querySelector(".cross"), aLine = aCross.querySelector("line"), dots = aCross.querySelectorAll("circle");
+      ah.querySelector(".hit").addEventListener("mousemove", function (ev) {
+        var r = aSvg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W2 / r.width);
+        var i = Math.max(0, Math.min(n, Math.round((px - m.l) / pw2 * n))), c = cumu[i], b = bs[i], x = ax(i);
+        aCross.style.display = ""; aLine.setAttribute("x1", x); aLine.setAttribute("x2", x);
+        dots.forEach(function (d, k) {
+          d.style.display = tops[k][i] > (k ? tops[k - 1][i] : 0) ? "" : "none";
+          d.setAttribute("cx", x); d.setAttribute("cy", ay(tops[k][i]));
+        });
+        tip(tipBody(b.sub + b.label, TYPES.slice().reverse(), function (k) { return c[k]; },
+          '<div class="row"><span>Added that ' + per + '</span><b>+' + fmt(b.v.moved) + '</b></div>'), ev);
+      });
+      ah.querySelector(".hit").addEventListener("mouseleave", function () { aCross.style.display = "none"; tip(null); });
+    }
+
+    /* table: the same buckets, newest first, with a totals row pinned at the bottom */
+    var tb = document.getElementById("tb-stack");
+    if (tb) {
+      var rows = bs.slice().reverse().filter(function (b) { return b.v.moved; });
+      tb.innerHTML = rows.length ? '<table><thead><tr><th>' + (R > 30 ? "Week of" : "Day") + '</th>' + TYPES.map(function (t) { return '<th class="num" data-s="' + t[0] + '">' + t[1] + '</th>'; }).join("") + '<th class="num">Total</th></tr></thead><tbody>' +
+        rows.map(function (b) {
+          return '<tr><td class="nowrap">' + b.label + '</td>' + TYPES.map(function (t) { return '<td class="num" data-s="' + t[0] + '">' + fmt(b.v[t[0]]) + '</td>'; }).join("") + '<td class="num"><strong>' + fmt(b.v.moved) + '</strong></td></tr>';
+        }).join("") + '</tbody><tfoot><tr><th>Total</th>' + TYPES.map(function (t) { return '<th class="num" data-s="' + t[0] + '">' + fmt(sumB(t[0])) + '</th>'; }).join("") + '<th class="num">' + fmt(sumB("moved")) + '</th></tr></tfoot></table>' :
+        '<p class="muted" style="padding:12px 0">Nothing moved in this period.</p>';
+    }
+
+    /* one footer line in every view, so the card is the same height whichever tab is active */
+    var foot = document.getElementById("ch-foot"), total = sumB("moved");
+    if (foot) {
+      if (S.dash.view === "total") {
+        foot.innerHTML = '<span>Now: <strong class="num">' + fmt(sumDays(DASH_DAYS - 1, 0).moved) + '</strong> records in Shopify</span>' +
+          '<span>' + (total ? '+' + fmt(total) + ' in the last ' + R + ' days' : 'Nothing added in the last ' + R + ' days') + '</span>';
+      } else {
+        foot.innerHTML = total ? '<span><strong class="num">' + fmt(total) + '</strong> records moved in the last ' + R + ' days</span>' +
+          '<span>Busiest ' + per + ': <strong>' + peak.sub.toLowerCase() + peak.label + '</strong> · ' + fmt(peak.v.moved) + '</span>' : '<span>Nothing moved in the last ' + R + ' days</span>';
+      }
+    }
+
+    /* hovering a legend entry spotlights that series in the chart or table */
+    card.querySelectorAll(".legend [data-series]").forEach(function (el) {
+      el.addEventListener("mouseenter", function () { card.dataset.focus = el.dataset.series; });
+      el.addEventListener("mouseleave", function () { delete card.dataset.focus; });
+    });
+  }
+
+  function drawDashboard() {
+    var bs = buckets();
+    var R = S.dash.range;
+
+    /* sparkline in the hero tile */
+    var sp = document.getElementById("sp-moved");
+    if (sp) {
+      var vals = bs.map(function (b) { return b.v.moved; }), mx = Math.max.apply(null, vals) || 1, sw = 96, sh = 28;
+      var pts = vals.map(function (v, i) { return [(i / Math.max(1, vals.length - 1)) * (sw - 6) + 3, sh - 3 - (v / mx) * (sh - 6)]; });
+      sp.innerHTML = '<svg width="' + sw + '" height="' + sh + '" aria-hidden="true"><polyline fill="none" stroke="var(--subtle)" stroke-width="1.5" stroke-linejoin="round" points="' + pts.map(function (p) { return p.join(","); }).join(" ") + '"/>' +
+        '<circle cx="' + pts[pts.length - 1][0] + '" cy="' + pts[pts.length - 1][1] + '" r="3" fill="var(--brand)" stroke="var(--surface)" stroke-width="1.5"/></svg>';
+    }
+
+    drawStackChart();
+
+    /* by data type: one bar per type, value at the tip */
+    var cur = sumDays(R - 1, 0), tmax = Math.max(1, cur.products, cur.customers, cur.orders, cur.other);
+    document.getElementById("ch-types").innerHTML = TYPES.map(function (t) {
+      var v = cur[t[0]], pct = cur.moved ? (v / cur.moved * 100).toFixed(1) : "0";
+      return '<div class="hbar" data-tip="' + t[1] + ': ' + fmt(v) + ' (' + pct + '% of all records)"><span>' + t[1].replace(" and posts", "") + '</span><div class="hbar__track"><div class="hbar__fill" style="width:' + (v / tmax * 100) + '%;background:var(' + t[2] + ')"></div></div><span class="hbar__val">' + compact(v) + '</span></div>';
+    }).join("");
+
+    /* by store: always both stores, so the split is visible even when one is filtered */
+    var keep = S.dash.store, perStore = ["oak", "bright"].map(function (s) { S.dash.store = s; var v = sumDays(R - 1, 0).moved; return [s, v]; });
+    S.dash.store = keep;
+    var smax = Math.max(1, perStore[0][1], perStore[1][1]);
+    document.getElementById("ch-stores").innerHTML = perStore.map(function (p) {
+      var dim = keep !== "all" && keep !== p[0];
+      return '<div class="hbar" style="' + (dim ? "opacity:.45" : "") + '" data-tip="' + DSTORES[p[0]].host + ' (' + DSTORES[p[0]].name + '): ' + fmt(p[1]) + ' records"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + DSTORES[p[0]].host.split(".")[0] + '</span>' +
+        '<div class="hbar__track"><div class="hbar__fill" style="width:' + (p[1] / smax * 100) + '%;background:var(--brand)"></div></div><span class="hbar__val">' + compact(p[1]) + '</span></div>';
+    }).join("");
+
+    /* health: one 100% bar in status colours, each part labelled */
+    var open = (S.dash.store !== "oak" && R >= 20) ? 37 : 0, fixed = Math.max(0, cur.failed - open), all = cur.moved + open || 1;
+    var parts = [["Moved first time", cur.moved - fixed, "var(--success)"], ["Fixed afterwards", fixed, "var(--info)"], ["Needs attention", open, "var(--critical)"]];
+    document.getElementById("ch-health").innerHTML = '<div class="health">' + parts.filter(function (p) { return p[1] > 0; }).map(function (p) {
+      return '<span style="flex:' + Math.max(p[1] / all, 0.012) + ';background:' + p[2] + '" data-tip="' + p[0] + ': ' + fmt(p[1]) + '"></span>';
+    }).join("") + '</div><div class="health-keys">' + parts.map(function (p) {
+      return '<div><strong>' + fmt(p[1]) + '</strong><span><i style="background:' + p[2] + '"></i>' + p[0] + '</span></div>';
+    }).join("") + '</div>';
+
+    /* open issues by cause */
+    var iss = open ? ISSUES : [];
+    var imax = Math.max.apply(null, [1].concat(iss.map(function (i) { return i.count; })));
+    document.getElementById("ch-issues").innerHTML = iss.length ? iss.map(function (i) {
+      var short = { opts: "Too many options", phone: "Phone format", img: "Missing image", orders: "Deleted product" }[i.id];
+      return '<div class="hbar" data-tip="' + i.title.replace(/"/g, "") + '"><span>' + short + '</span><div class="hbar__track"><div class="hbar__fill" style="width:' + (i.count / imax * 100) + '%;background:var(--s2)"></div></div><span class="hbar__val">' + i.count + '</span></div>';
+    }).join("") : '<p class="muted" style="padding:0 0 4px">No open issues for this selection.</p>';
+
+    /* recent activity */
+    var kinds = { demo: ["Free demo finished", "spark", ""], full: ["Full migration finished", "checkLg", "ok"], sync: ["Changes synced", "migrate", ""], rerun: ["Extra products moved", "plus", ""] };
+    var feed = DASH.events.filter(function (e) { return e.ago < R && !e.part && (S.dash.store === "all" || S.dash.store === e.s); }).sort(function (a, b) { return a.ago - b.ago; });
+    document.getElementById("feed").innerHTML = feed.length ? feed.map(function (e) {
+      var k = kinds[e.kind], n = e.kind === "full" ? DASH.events.filter(function (o) { return o.s === e.s && o.kind === "full"; }).reduce(function (s, o) { return s + o.n; }, 0) : e.n;
+      var warn = e.failed && e.fixed < e.failed;
+      return '<li><span class="feed__icon' + (warn ? " feed__icon--warn" : k[2] ? " feed__icon--" + k[2] : "") + '">' + (warn ? I.alert : I[k[1]]) + '</span><div class="feed__text"><strong>' + k[0] + '</strong> · ' + DSTORES[e.s].host +
+        '<div class="muted small">' + fmt(n) + ' records' + (e.failed ? " · " + (e.failed - (e.fixed || 0)) + " need attention" : "") + '</div></div><span class="feed__time">' + (e.ago === 0 ? "Today" : e.ago === 1 ? "Yesterday" : dayLabel(e.ago)) + '</span></li>';
+    }).join("") : '<li><span></span><span class="muted">No activity in this period.</span><span></span></li>';
+
+    /* simple tooltips for HTML bars */
+    main.querySelectorAll("[data-tip]").forEach(function (el) {
+      el.addEventListener("mousemove", function (ev) { tip(el.dataset.tip, ev); });
+      el.addEventListener("mouseleave", function () { tip(null); });
+    });
+  }
+
+  /* ---------- render ---------- */
+  var PAGES = { home: pageHome, dashboard: pageDashboard, wizard: pageWizard, progress: pageWizard, demo: pageDemo, results: pageResults, migrations: pageMigrations, settings: pageSettings, plans: pagePlans, help: pageHelp };
+  var main = document.getElementById("main");
+
+  function render() {
+    main.innerHTML = appTabs() + PAGES[S.page]();
+    main.querySelectorAll("[data-partial]").forEach(function (el) { el.indeterminate = true; });
+    if (S.page === "dashboard") drawDashboard();
+    var cur = navKey();
+    document.getElementById("sidenav").innerHTML = [["dashboard", "Dashboard"], ["home", "Connector"], ["migrations", "Migrations"], ["settings", "Settings"], ["plans", "Plans"], ["help", "Help"]].map(function (p) {
+      return '<button class="side__link" type="button" data-go="' + p[0] + '"' + (cur === p[0] ? ' aria-current="page"' : "") + '>' + p[1] + '</button>';
+    }).join("");
+    var sel = document.getElementById("proto-stage");
+    if (sel) {
+      sel.innerHTML = STAGES.map(function (t, i) { return '<option value="' + i + '"' + (i === S.stage ? " selected" : "") + '>' + (i + 1) + ". " + t + '</option>'; }).join("");
+    }
+  }
+  function go(page) { tip(null); S.page = page; render(); window.scrollTo(0, 0); }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+
+  var modalConfirm = null;
+  function modal(o) {
+    modalConfirm = o.onConfirm;
+    document.getElementById("modal").innerHTML = '<div class="overlay" data-act="modal-close"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t"><div class="dialog__head" id="dlg-t">' + o.title + '</div><div class="dialog__body">' + o.body + '</div>' +
+      '<div class="dialog__foot"><button class="btn" type="button" data-act="modal-close">' + (o.cancel || "Cancel") + '</button><button class="btn ' + (o.destructive ? "btn--critical" : "btn--primary") + '" type="button" data-act="modal-ok">' + o.ok + '</button></div></div></div>';
+    document.querySelector("[data-act=modal-ok]").focus();
+  }
+  function closeModal() { document.getElementById("modal").innerHTML = ""; modalConfirm = null; }
+  /* A dialog of large, described options instead of OK / Cancel. */
+  function modalChoice(title, options) {
+    modalConfirm = function () {};
+    document.getElementById("modal").innerHTML = '<div class="overlay" data-act="modal-close"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t"><div class="dialog__head" id="dlg-t">' + title + '</div><div class="dialog__body">' +
+      options.map(function (o) {
+        return '<button class="choice' + (o.primary ? " choice--primary" : "") + '" type="button" data-act="' + o.act + '"><span class="choice__title">' + o.title + '</span><span class="choice__body">' + o.body + '</span></button>';
+      }).join("") + '</div><div class="dialog__foot"><button class="btn" type="button" data-act="modal-close">Cancel</button></div></div></div>';
+    (document.querySelector(".choice--primary") || document.querySelector(".choice")).focus();
+  }
+
+  /* ---------- run simulation ---------- */
+  var nextId = 11, timer = null;
+  function startRun(type) {
+    var rows = chosenEnt().map(function (e) {
+      var total = e.count === null ? (type === "demo" ? 20 : P().redirects) : (type === "demo" ? Math.min(20, e.count) : e.count);
+      return { label: e.label, total: total, done: 0, ticks: type === "demo" ? 4 : 14 };
+    });
+    S.run = { type: type, id: nextId++, rows: rows, finished: false };
+    S.paused = false;
+    clearInterval(timer);
+    timer = setInterval(tick, 130);
+    go("progress");
+  }
+  function tick() {
+    if (S.paused || !S.run) return;
+    var row = S.run.rows.find(function (r) { return r.done < r.total; });
+    if (!row) return finishRun();
+    row.done = Math.min(row.total, row.done + Math.max(1, Math.ceil(row.total / row.ticks)));
+    if (S.page === "progress" || S.page === "home" || S.page === "migrations") render();
+  }
+  function finishRun() {
+    clearInterval(timer);
+    var r = S.run; r.finished = true;
+    var records = r.rows.reduce(function (s, x) { return s + (x.label === "Old page links" ? 0 : x.total); }, 0);
+    var d = new Date();
+    S.history.push({ id: r.id, type: r.type, records: r.type === "demo" ? demoTotal() : records, date: d.getDate() + " " + d.toLocaleString("en-GB", { month: "short" }) + ", " + d.toTimeString().slice(0, 5) });
+    if (r.type === "demo") { S.demoRun = true; S.stage = Math.max(S.stage, 2); toast("Demo finished. Check it in Shopify."); }
+    else { S.fixed = []; S.stage = Math.max(S.stage, 5); toast("Full migration finished"); }
+    S.lastRun = r; S.run = null;
+    render();
+  }
+
+  /* ---------- prototype stage jump ---------- */
+  function jump(stage) {
+    clearInterval(timer);
+    S = initial();
+    S.stage = stage;
+    if (stage >= 1) { S.connected = true; S.draft = false; S.wiz = 3; }
+    if (stage >= 2) { S.demoRun = true; S.history.push({ id: 10, type: "demo", records: demoTotal(), date: "8 Oct, 10:42" }); }
+    if (stage >= 4) S.plan = { id: "growth", name: "Growth", limit: 25000 };
+    if (stage >= 5) S.history.push({ id: 11, type: "full", records: totalRecords(), date: "8 Oct, 11:31" });
+    if (stage >= 6) S.fixed = ISSUES.map(function (i) { return i.id; });
+    if (stage >= 7) S.syncState = "done";
+    nextId = 12;
+    go("home");
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", function (ev) {
+    var el = ev.target.closest("[data-go],[data-act],[data-fix],[data-plan],[data-tab],[data-suball],[data-range],[data-view]");
+    if (!el) return;
+    if (el.dataset.go) { if (el.closest("[data-act=modal-close]")) closeModal(); return go(el.dataset.go); }
+    if (el.dataset.tab) { S.demoTab = el.dataset.tab; return render(); }
+    if (el.dataset.range) { S.dash.range = Number(el.dataset.range); return render(); }
+    if (el.dataset.view) { S.dash.view = el.dataset.view; return swapDashView(); }
+    if (el.dataset.suball) {
+      var sk = el.dataset.suball, everything = S.subs[sk].length === SUB[sk].length;
+      S.subs[sk] = SUB[sk].filter(function (s) { return !everything || s[3]; }).map(function (s) { return s[0]; });
+      return render();
+    }
+    if (el.dataset.plan) {
+      var p = { starter: { id: "starter", name: "Starter", limit: 2500 }, growth: { id: "growth", name: "Growth", limit: 25000 }, pro: { id: "pro", name: "Pro", limit: null } }[el.dataset.plan];
+      return modal({ title: "Approve the " + p.name + " plan", body: "<p>In the real app, Shopify shows its own approval screen here and the charge is added to your Shopify bill.</p>", ok: "Approve", onConfirm: function () {
+        S.plan = p; if (S.stage === 3) S.stage = 4; toast(p.name + " plan is active"); go("home");
+      } });
+    }
+    if (el.dataset.fix) {
+      var id = el.dataset.fix; el.classList.add("is-loading");
+      return setTimeout(function () { S.fixed.push(id); toast("Fixed"); render(); }, 900);
+    }
+    var a = el.dataset.act;
+    if (a === "modal-close") { if (ev.target === el || el.tagName === "BUTTON") closeModal(); return; }
+    if (a === "modal-ok") { var fn = modalConfirm; closeModal(); if (fn) fn(); return; }
+    if (a === "reset") { clearInterval(timer); S = initial(); nextId = 11; return go("home"); }
+    if (a === "new") {
+      if (S.connected && !(S.draft && S.stage <= 1)) return newChoice();
+      S.draft = true; return go("wizard");
+    }
+    if (a === "choice-new") { closeModal(); return startNewStore(); }
+    if (a === "choice-same") {
+      closeModal();
+      if (S.stage >= 5) { S.draft = true; S.wiz = 2; return go("wizard"); }
+      return go("home");
+    }
+    if (a === "open-wizard") { S.wiz = Number(el.dataset.step); return go("wizard"); }
+    if (a === "wiz-back") { S.wiz--; return render(); }
+    if (a === "wiz-next") { S.wiz++; return render(); }
+    if (a === "discard") {
+      return modal({ title: "Discard this draft?", body: "<p>Nothing has been migrated yet, so nothing is lost. Your store connection is kept.</p>", ok: "Discard", destructive: true, onConfirm: function () { S.draft = false; S.wiz = S.connected ? 2 : 1; go("home"); } });
+    }
+    if (a === "test") {
+      if (!S.platform) return toast("Choose a platform first");
+      if (!S.url.trim()) return toast("Enter your store address first");
+      S.testing = true; S.connected = false; render();
+      return setTimeout(function () { S.testing = false; S.connected = true; S.entities = available(); if (S.stage === 0) S.stage = 1; toast("Connected to " + src()); render(); }, 1200);
+    }
+    if (a === "start-demo") { S.stage = Math.max(S.stage, 1); S.draft = false; return startRun("demo"); }
+    if (a === "demo-ok") { S.stage = Math.max(S.stage, 3); toast("Demo approved"); return go(S.plan ? "home" : "plans"); }
+    if (a === "need-plan") { toast("Choose a plan to run the full migration"); return go("plans"); }
+    if (a === "confirm-full") {
+      if (!S.plan) { toast("Choose a plan first"); return go("plans"); }
+      return modal({ title: "Begin the full migration?", body: "<p><strong>" + fmt(totalRecords()) + " records</strong> will be created in " + SHOP + ".</p><p class=\"muted\">It runs in the background and takes " + eta(totalRecords()) + ". You can close the page.</p>", ok: "Begin migration", onConfirm: function () { S.stage = 4; S.draft = false; startRun("full"); } });
+    }
+    if (a === "pause") { S.paused = !S.paused; toast(S.paused ? "Paused" : "Resumed"); return render(); }
+    if (a === "cancel") {
+      return modal({ title: "Cancel this migration?", body: "<p>Records already created stay in Shopify. You can start again later and we skip anything that is already there.</p>", ok: "Cancel migration", cancel: "Keep running", destructive: true, onConfirm: function () {
+        clearInterval(timer); var t = S.run.type; S.run = null; S.stage = t === "demo" ? 1 : 4; toast("Migration cancelled"); go("home");
+      } });
+    }
+    if (a === "notify") { S.notify = el.checked; return; }
+    if (a === "delete-demo") {
+      return modal({ title: "Delete the demo data?", body: "<p>This removes the " + fmt(demoTotal()) + " demo records from " + SHOP + ". Your old store is not touched.</p>", ok: "Delete demo data", destructive: true, onConfirm: function () {
+        S.demoRun = false; S.history = S.history.filter(function (h) { return h.type !== "demo"; }); S.stage = Math.min(S.stage, 1); toast("Demo data deleted"); go("home");
+      } });
+    }
+    if (a === "to-sync") { S.stage = Math.max(S.stage, 6); return go("home"); }
+    if (a === "sync") { S.syncState = "running"; render(); return setTimeout(function () { S.syncState = "done"; toast("Sync finished"); render(); }, 1800); }
+    if (a === "finish") { S.stage = 7; toast("Migration complete"); return go("home"); }
+    if (a === "disconnect") {
+      return modal({ title: "Disconnect " + src() + "?", body: "<p>Your saved keys are deleted. Data already in Shopify stays.</p>", ok: "Disconnect", destructive: true, onConfirm: function () { S.connected = false; toast("Disconnected"); render(); } });
+    }
+    if (a === "help-cat") { HELP.cat = el.dataset.cat; return refreshHelp(); }
+    if (a === "help-topic") { HELP.cat = HELP.cat === el.dataset.cat ? "all" : el.dataset.cat; refreshHelp(); return document.getElementById("hp-faq").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    if (a === "help-plat") { HELP.plat = el.dataset.plat; return render(); }
+    if (a === "admin-link") return toast("In the app this opens " + el.dataset.label + " in Shopify Admin");
+    if (a === "toast") return toast(el.dataset.msg);
+  });
+
+  document.addEventListener("change", function (ev) {
+    var t = ev.target;
+    if (t.id === "proto-stage") return jump(Number(t.value));
+    if (t.name === "platform") {
+      /* Sample address and key are filled in so the prototype can be clicked straight through. */
+      S.platform = t.value; S.connected = false; S.url = "https://" + P().host; S.fields = sampleFields(t.value); S.entities = available();
+      return render();
+    }
+    if (t.id === "dash-store") { S.dash.store = t.value; return render(); }
+    if (t.dataset.sub) {
+      var parts = t.dataset.sub.split(":"), list = S.subs[parts[0]], at = list.indexOf(parts[1]);
+      if (t.checked && at === -1) list.push(parts[1]); else if (!t.checked && at !== -1) list.splice(at, 1);
+      return render();
+    }
+    if (t.dataset.ent) {
+      var k = t.dataset.ent, on = t.checked;
+      /* a half-ticked parent fills in its details instead of switching off */
+      if (!on && t.hasAttribute("data-partial")) { S.subs[k] = allSubs()[k]; return render(); }
+      var add = function (x) { if (S.entities.indexOf(x) === -1) S.entities.push(x); };
+      var rem = function (x) { var j = S.entities.indexOf(x); if (j !== -1) S.entities.splice(j, 1); };
+      if (on) { add(k); if (k === "orders") { add("products"); add("customers"); } }
+      else { rem(k); if ((k === "products" || k === "customers") && S.entities.indexOf("orders") !== -1) { rem("orders"); toast("Orders need products and customers, so Orders was unticked too"); } }
+      return render();
+    }
+  });
+  document.addEventListener("input", function (ev) { var d = ev.target.dataset || {}; if (d.bind) S[d.bind] = ev.target.value; if (d.field) S.fields[d.field] = ev.target.value; });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && modalConfirm !== null) closeModal();
+    if (ev.key === "Enter" && ev.target.matches("tr[data-go], .run[data-go]")) go(ev.target.dataset.go);
+  });
+
+  var resizeTimer;
+  window.addEventListener("resize", function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { if (S.page === "dashboard") drawDashboard(); }, 120); });
+
+  render();
+
+  /* First visit: let the dashboard show, then a welcome dialog invites them to connect their old store. "Connect store" opens Home, where the journey starts. */
+  function welcomeDialog() {
+    if (S.connected || modalConfirm !== null) return;
+    modalConfirm = function () { go("home"); };
+    var arrow = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg>';
+    var bag = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h12l-1 10H5L4 7Z"/><path d="M7.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/></svg>';
+    var clock = '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 1.5"/></svg>';
+    var point = function (strong, rest) { return '<li><span>' + I.check + '</span><span><strong>' + strong + '</strong> ' + rest + '</span></li>'; };
+    document.getElementById("modal").innerHTML = '<div class="overlay overlay--welcome" data-act="modal-close"><div class="dialog welcome" role="dialog" aria-modal="true" aria-labelledby="dlg-t">' +
+      '<div class="welcome__hero"><span class="badge badge--brand welcome__step">Step 1 of 4</span><div class="welcome__flow">' +
+        '<div class="welcome__node"><i>' + I.store + '</i><span><strong>Your old store</strong><small>WooCommerce, Magento or WordPress</small></span></div>' +
+        '<div class="welcome__path" aria-hidden="true"><span></span><span></span><span></span>' + arrow + '</div>' +
+        '<div class="welcome__node welcome__node--shopify"><i>' + bag + '</i><span><strong>Shopify</strong><small>' + SHOP + '</small></span></div>' +
+      '</div></div>' +
+      '<div class="welcome__body"><h2 id="dlg-t">Connect your store to get started</h2>' +
+        '<p>Move your products, customers, orders and content into Shopify. Connecting takes about two minutes, and the dashboard fills in as records arrive.</p>' +
+        '<ul class="welcome__points">' +
+          point("Your old store is never changed.", "We only read from it.") +
+          point("Try a free demo first.", "20 records of each type, so you can check the result.") +
+          point("Pause or stop at any time.", "Everything already moved stays in Shopify.") +
+        '</ul>' +
+        '<div class="welcome__plats">Works with <span class="badge">WooCommerce</span><span class="badge">Magento</span><span class="badge">WordPress</span></div>' +
+      '</div>' +
+      '<div class="welcome__foot"><button class="btn" type="button" data-act="modal-close">Explore the dashboard first</button>' +
+        '<button class="btn btn--primary" type="button" data-act="modal-ok">Connect store ' + arrow.replace("<svg ", '<svg width="16" height="16" ') + '</button></div>' +
+      '</div></div>';
+    document.querySelector("[data-act=modal-ok]").focus();
+  }
+  setTimeout(welcomeDialog, 900);
+})();
+</script>
+
+</html>
